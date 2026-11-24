@@ -1,0 +1,18 @@
+# Run outputs (tens of GB; kept on the laptop, not on GitHub)
+/fast/runs/
+/stages/*/runs/*
+*.pkl
+*.pkl.tmp
+*.bad
+births.csv
+*.zip
+# ...except the 300 evolved stage-5 founders that later experiments start from
+!/stages/05_hazards/runs/hazards_on_seed1/
+/stages/05_hazards/runs/hazards_on_seed1/*
+!/stages/05_hazards/runs/hazards_on_seed1/checkpoint_23500.pkl
+
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+_to_delete/

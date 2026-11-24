@@ -1,0 +1,5 @@
+world 128x128, warm-up 1500 ticks, then time 300 ticks
+numba CPU (16 threads)             160.4 ticks/s at 10334-10524 agents (warm-up took 16 s)
+GPU: NVIDIA GeForce RTX 5060 Laptop GPU, torch 2.13.0+cu132
+torch GPU                          110.0 ticks/s at 10307-10562 agents (warm-up took 13 s)
+done

@@ -1,0 +1,54 @@
+"""
+An agent's brain: a tiny neural network, nothing hand-coded about behavior.
+Senses in, action out. All behavior comes from these weights, which are
+only ever set by inheritance + mutation, never by us writing rules.
+"""
+import numpy as np
+
+# Inputs: food patch (25) + occupancy patch (25) + signal patch (25) + energy + age
+# Nothing here tells the brain what a symbol MEANS. If "symbol 2" comes to
+# correlate with "food here," that's for selection to discover, not us to wire.
+N_SYMBOLS = 4
+INPUT_SIZE = 25 + 25 + 25 + 2
+HIDDEN_SIZE = 24
+OUTPUT_SIZE = 7 + N_SYMBOLS
+
+ACTIONS = ["stay", "N", "S", "E", "W", "eat", "reproduce"] + [f"signal_{i}" for i in range(1, N_SYMBOLS + 1)]
+
+
+class Brain:
+    """A simple 2-layer MLP. Weights ARE the genome."""
+
+    def __init__(self, w1=None, b1=None, w2=None, b2=None, rng=None):
+        rng = rng or np.random.default_rng()
+        scale1 = np.sqrt(2.0 / INPUT_SIZE)
+        scale2 = np.sqrt(2.0 / HIDDEN_SIZE)
+        self.w1 = w1 if w1 is not None else rng.normal(0, scale1, (INPUT_SIZE, HIDDEN_SIZE))
+        self.b1 = b1 if b1 is not None else np.zeros(HIDDEN_SIZE)
+        self.w2 = w2 if w2 is not None else rng.normal(0, scale2, (HIDDEN_SIZE, OUTPUT_SIZE))
+        self.b2 = b2 if b2 is not None else np.zeros(OUTPUT_SIZE)
+
+    def act(self, sensory_input, rng):
+        h = np.tanh(sensory_input @ self.w1 + self.b1)
+        out = h @ self.w2 + self.b2
+        # softmax -> sample (not argmax), so behavior isn't rigidly deterministic
+        probs = np.exp(out - out.max())
+        probs /= probs.sum()
+        action_idx = rng.choice(OUTPUT_SIZE, p=probs)
+        return ACTIONS[action_idx]
+
+    def mutate(self, rng, rate=0.1, strength=0.15):
+        """Returns a MUTATED COPY. Parent is untouched."""
+        def mutate_arr(arr):
+            mask = rng.random(arr.shape) < rate
+            noise = rng.normal(0, strength, arr.shape)
+            return arr + mask * noise
+
+        return Brain(
+            mutate_arr(self.w1), mutate_arr(self.b1),
+            mutate_arr(self.w2), mutate_arr(self.b2),
+        )
+
+    def complexity(self):
+        """A crude proxy for 'how much the weights are doing' — mean abs weight."""
+        return float(np.mean(np.abs(self.w1)) + np.mean(np.abs(self.w2)))

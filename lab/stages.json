@@ -1,0 +1,407 @@
+{
+  "stages": [
+    {
+      "name": "01_social_sensing",
+      "code_dir": "stages/01_social_sensing",
+      "status": "done",
+      "adopted": true,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/ablation_on_seed1"
+        },
+        {
+          "arm": "off",
+          "dir": "runs/ablation_off_seed1"
+        }
+      ]
+    },
+    {
+      "name": "02_communication",
+      "code_dir": "stages/02_communication",
+      "status": "done",
+      "adopted": true,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/comm_on_seed1",
+          "launch": [
+            "python3",
+            "run_comm_ablation.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/comm_off_seed1",
+          "launch": [
+            "python3",
+            "run_comm_ablation.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03_seasons",
+      "code_dir": "stages/03_seasons",
+      "status": "done",
+      "adopted": true,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/seasons_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1",
+            "--communication",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/seasons_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1",
+            "--communication",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04_memory",
+      "code_dir": "stages/04_memory",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/memory_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1",
+            "--seasons",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/memory_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1",
+            "--seasons",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05_hazards",
+      "code_dir": "stages/05_hazards",
+      "status": "done",
+      "adopted": true,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/hazards_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/hazards_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06_kin",
+      "code_dir": "stages/06_kin",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/kin_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/kin_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ],
+      "note": "inconclusive: share had b<=c, see FINDINGS; rerun as 06b"
+    },
+    {
+      "name": "06b_kin",
+      "code_dir": "stages/06b_kin",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/kin_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/kin_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07_sexual",
+      "code_dir": "stages/07_sexual",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/sexual_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/sexual_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08_predators",
+      "code_dir": "stages/08_predators",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/predators_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/predators_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09_markers",
+      "code_dir": "stages/09_markers",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/markers_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/markers_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10_learning",
+      "code_dir": "stages/10_learning",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/learning_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/learning_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11_selfpred",
+      "code_dir": "stages/11_selfpred",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/selfpred_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/selfpred_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12_language",
+      "code_dir": "stages/12_language",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/language_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/language_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13_cofood",
+      "code_dir": "stages/13_cofood",
+      "status": "done",
+      "adopted": false,
+      "target_tick": 25000,
+      "runs": [
+        {
+          "arm": "on",
+          "dir": "runs/cofood_on_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "on",
+            "1"
+          ]
+        },
+        {
+          "arm": "off",
+          "dir": "runs/cofood_off_seed1",
+          "launch": [
+            "python3",
+            "run_stage.py",
+            "off",
+            "1"
+          ]
+        }
+      ]
+    }
+  ]
+}

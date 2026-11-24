@@ -1,0 +1,12 @@
+seed 1 tick  10000: eaten share normal 0.21 vs blind 0.29 (gap -0.08) | solo tries per item 2.2 vs 2.5 | pop 1782 vs 2205
+seed 1 tick 100000: eaten share normal 0.47 vs blind 0.45 (gap +0.02) | solo tries per item 2.7 vs 2.5 | pop 1846 vs 2149
+seed 2 tick  10000: eaten share normal 0.31 vs blind 0.24 (gap +0.07) | solo tries per item 2.5 vs 2.2 | pop 2071 vs 1815
+seed 2 tick 100000: eaten share normal 0.39 vs blind 0.50 (gap -0.10) | solo tries per item 2.3 vs 2.9 | pop 2094 vs 2305
+seed 3 tick  10000: eaten share normal 0.28 vs blind 0.31 (gap -0.03) | solo tries per item 3.0 vs 2.9 | pop 1994 vs 1926
+seed 3 tick 100000: eaten share normal 0.49 vs blind 0.41 (gap +0.08) | solo tries per item 4.1 vs 3.4 | pop 2764 vs 2266
+seed 4 tick  10000: eaten share normal 0.26 vs blind 0.36 (gap -0.10) | solo tries per item 3.7 vs 4.3 | pop 1862 vs 1824
+seed 4 tick 100000: eaten share normal 0.60 vs blind 0.54 (gap +0.07) | solo tries per item 3.1 vs 3.5 | pop 2323 vs 2330
+seed 5 tick  10000: eaten share normal 0.14 vs blind 0.18 (gap -0.04) | solo tries per item 2.2 vs 3.0 | pop 1507 vs 1629
+seed 5 tick 100000: eaten share normal 0.57 vs blind 0.57 (gap +0.01) | solo tries per item 2.8 vs 3.0 | pop 2586 vs 1885
+tick 10000: mean gap (normal - blind) -0.037, normal higher on 1/5 seeds
+tick 100000: mean gap (normal - blind) +0.016, normal higher on 4/5 seeds
