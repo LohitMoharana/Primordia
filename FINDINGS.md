@@ -902,3 +902,32 @@ but the signals carry very little information. Not yet a real language. Worth mo
 **Step 2 summary.** Sparse food and terrain did not make memory or shared food useful. Language moved from "not used"
 to "slight hint" once walls made distant information matter. Next in the approved order: step 3 (longer runs, 1M ticks)
 and step 5 (more seeds), starting with terrain seeds 6-10 to test the survival hint.
+
+### Terrain + language, seeds 6-10 (24 Nov 2026): the hint fades
+- Survival to 100k: language ON died out on seed 7 (tick 8.2k); OFF died out on seed 9 (tick 4.8k). All 10 seeds: **ON 9/10, OFF 7/10**
+  (seeds 1-5 alone looked like 5/5 vs 2/5). Early deaths are founding failures in the first ~17k ticks, in both arms.
+- Lesion on ON seeds 6, 8, 9, 10 (ticks 90k, 100k): keeping language gives energy -0.11 (better 3/8), eating -0.025 (higher 1/8).
+- All 18 readings (seeds 1-10): energy **+0.03 (better 10/18)**, eating **-0.010 (higher 5/18)**. No benefit.
+- Information about cluster direction: seed 6 symbol 2 adds +0.096 bits (highest seen in any run), but seed 6's lesion shows no benefit;
+  others -0.04 to +0.04.
+Verdict: language in terrain is **not used**. The seeds 1-5 hint was noise, exactly the kind 10 seeds is meant to catch.
+
+## Step 3: 1,000,000-tick runs (24 Nov 2026, laptop)
+
+All 15 surviving terrain runs (language ON seeds 1-6, 8-10; OFF seeds 3, 5-8, 10) extended from 100k to 1,000,000 ticks.
+Run time ~2.7 h with 15 runs in parallel (~117 ticks/s each, ~2,500 agents each). Script: `fast/analyze_step3.py`.
+
+| | 0-10k | 90-100k | 490-500k | 900k-1M |
+|---|---|---|---|---|
+| Behaviour change per 1,000 ticks (mean of 15) | 0.107 | 0.046 | 0.033 | 0.028 |
+
+- **Still slowing, never stopping.** Behaviour keeps changing a little (0.028 per 1,000 ticks at the end), but there is no burst of new behaviour in any run.
+- **One family.** Every run is descended from one founder by ~35k ticks and stays that way to 1M.
+- **Getting more efficient, not more inventive.** Population grew from ~1,980 (at 100k) to ~2,540 (at 1M) on the same food, while mean energy stayed ~3.1.
+  Action shares 100k -> 1M: signalling halved (each symbol ~0.016 -> 0.008), standing still 0.017 -> 0.011, sharing and mating down;
+  moving up (~0.10 -> ~0.11 each direction), reproducing 0.074 -> 0.088, eating unchanged (0.41). Evolution is trimming wasted actions.
+- **Brains drift.** Weight spread grows from 0.23 (10k) to 0.72 (1M): much of the genome is changing with little effect on behaviour (neutral drift).
+- **Language at 1M:** lesion on 9 ON seeds gives energy -0.03 (better 5/9), eating -0.006 (higher 4/9). Still not used. ON and OFF worlds look the same.
+
+Verdict: a million ticks makes the agents leaner, not new. Longer runs alone won't produce novelty in this world; this supports moving to
+worlds that push back (evolving predators, several ways to live, agents that change the world) before bigger brains.

@@ -32,6 +32,17 @@ p.add_argument("--checkpoint-every", type=int, default=None,
 p.add_argument("--stage13-dir", default=os.path.join(HERE, "..", "stages", "13_cofood"))
 a = p.parse_args()
 
+# one process per run folder: a second copy of the same run exits at once (code 3)
+import atexit
+os.makedirs(a.out_dir, exist_ok=True)
+_lock = os.path.join(a.out_dir, "RUNNING.lock")
+try:
+    os.close(os.open(_lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+except FileExistsError:
+    print(f"{a.out_dir} is already being run by another process (delete RUNNING.lock if that is wrong)")
+    sys.exit(3)
+atexit.register(lambda: os.path.exists(_lock) and os.remove(_lock))
+
 ck = sorted(((int(re.search(r"checkpoint_(\d+)", f).group(1)), f)
              for f in glob.glob(os.path.join(a.out_dir, "checkpoint_*.pkl"))))
 # skip unreadable saves (e.g. cut off by a kill before saves were atomic): use the newest good one

@@ -51,17 +51,17 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 |:-:|---|---|
 | ✅ | **Social sensing** | Real and used. Switching it off cuts eating on **10/10** seeds. |
 | ✅ | **Poison avoidance** | Real. Creatures learn to steer around hazards. |
-| 🟡 | **Two-symbol language** | First hint, in walled terrain: language worlds survived **5/5** seeds vs **2/5** without. Signals still carry little meaning. *Being tested on more seeds.* |
+| ❌ | Two-symbol language | Not used, even in walled terrain. A 5-seed "hint" vanished at 10 seeds and at 1,000,000 ticks. |
 | ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
 
 <p align="center">
-  <img src="docs/img/evolution.png" alt="Founding families collapse to one within 20,000 ticks; behaviour change levels off around 0.05" width="100%">
+  <img src="docs/img/evolution.png" alt="Over 1,000,000 ticks: founding families collapse to one, behaviour change slowly falls to about 0.03, population grows steadily" width="100%">
 </p>
 
-**Every world ends up descended from a single founder out of 300, and behaviour settles down within ~50,000 ticks.** Evolution finds one good way to live and stops exploring. That's the problem the next stage of the project attacks.
+**A million ticks makes creatures leaner, not new.** Every world collapses to a single founding family out of 300 within ~35,000 ticks. Over the next 965,000 ticks populations grow by ~30% on the same food as evolution trims wasted actions (signalling halves, idling drops), but no new behaviour ever appears. Evolution finds one good way to live and stops exploring. That's the problem the next stage of the project attacks.
 
 📖 The full lab notebook, with every table, correction and dead end, is in [`FINDINGS.md`](FINDINGS.md).
 
@@ -69,7 +69,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 
 - [x] **Fast engine:** NumPy + Numba rewrite, ~110–180× faster, plus a PyTorch/GPU version
 - [x] **Sparse world:** drifting, vanishing food clusters and walled terrain
-- [ ] **Long runs:** 1,000,000 ticks with a novelty meter and family trees *(running now)*
+- [x] **Long runs:** 1,000,000 ticks with a novelty meter and family trees
 - [ ] **Worlds that push for novelty**
   - [ ] ⚔️ An arms race: predators that evolve too
   - [ ] 🍄 Several ways to live: food types that need different skills
