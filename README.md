@@ -51,6 +51,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 |:-:|---|---|
 | ✅ | **Social sensing** | Real and used. Switching it off cuts eating on **10/10** seeds. |
 | ✅ | **Poison avoidance** | Real. Creatures learn to steer around hazards. |
+| ✅ | **Evolving predators** | A one-sided arms race. Predators keep getting better at hunting for a million ticks (**+46%**, 9/10 seeds; frozen predators: no gain). Prey evolve a real defence, reacting to predators they can sense (blinding them raises kills on 9/10 seeds), but still lose ground. |
 | ❌ | Two-symbol language | Not used, even in walled terrain. A 5-seed "hint" vanished at 10 seeds and at 1,000,000 ticks. |
 | ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
@@ -71,7 +72,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] **Sparse world:** drifting, vanishing food clusters and walled terrain
 - [x] **Long runs:** 1,000,000 ticks with a novelty meter and family trees
 - [ ] **Worlds that push for novelty**
-  - [ ] ⚔️ An arms race: predators that evolve too
+  - [x] ⚔️ An arms race: predators that evolve too *(first round done: one-sided race; next, give prey more ways to escape)*
   - [ ] 🍄 Several ways to live: food types that need different skills
   - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
 - [ ] Bigger brains, only where they're needed
@@ -121,6 +122,7 @@ Defined in [`fast/modes.py`](fast/modes.py):
 | `sparse2_language` | Two-symbol language in a sparse world |
 | `sparse2_cofood` | Shared food in a sparse world |
 | `terrain_language` | Two-symbol language in a walled world |
+| `arms_race` | Predators that evolve vs predators that copy exactly |
 </details>
 
 ## 🗂️ Repository

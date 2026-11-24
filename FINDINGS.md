@@ -931,3 +931,35 @@ Run time ~2.7 h with 15 runs in parallel (~117 ticks/s each, ~2,500 agents each)
 
 Verdict: a million ticks makes the agents leaner, not new. Longer runs alone won't produce novelty in this world; this supports moving to
 worlds that push back (evolving predators, several ways to live, agents that change the world) before bigger brains.
+
+## Arms race: evolving predators (24 Nov 2026, laptop, 1,000,000 ticks)
+
+Mode `arms_race` (sparse world v2 + predators.py). Predators: own brains (52 inputs -> 16 hidden -> 7 actions), arrive at tick 3,000,
+catch a prey within 1 cell with p = 0.2, gain 3 energy per kill; floor of 10 (random-brain newcomers). Prey sense predators (inputs 125-149).
+ON: predators mutate. OFF: predators copy exactly (only selection among the 60 founder brains). 10 seeds per arm, all 20 survived to 1M.
+
+**Red Queen test** (`fast/red_queen.py`): 400 prey from one time point vs 100 predators from another, same world, 300 ticks,
+predators cannot breed or starve; kills per predator per 100 ticks (mean of 10 seeds, 3 repeats each).
+
+| | prey @50k | prey @1M |
+|---|---|---|
+| ON, predators @50k | 1.17 | 1.38 |
+| ON, predators @1M | 1.59 | 2.04 |
+| OFF, predators @50k | 0.55 | 0.73 |
+| OFF, predators @1M | 0.59 | 0.80 |
+
+- **Predators keep improving when they can evolve:** late predators catch +0.54 more per 100 ticks (+46%), better on **9/10** seeds.
+  Control: +0.05 (4/10). Evolving predators were already 2x better than the control by tick 50k.
+- **Prey do not win back ground:** in both arms, late prey are caught *more* than early prey by the same predators
+  (ON -0.33, better on 3/10; OFF -0.20, better on 0/10). Not explained by crowding (neighbours within 1 cell: ON 2.34 -> 2.34).
+- **But prey evolved a new use of information:** blinding prey to predators (lesion of inputs 125-149) changes kills by
+  -0.04 at 50k (3/10) and **+0.24 at 1M (more kills on 9/10)**. Prey learned, by evolution, to react to predators: about 12% fewer deaths.
+- Prey behaviour 50k -> 1M (ON): moving 0.43 -> 0.58, eating 0.38 -> 0.30, reproducing 0.082 -> 0.063, signalling falls.
+- Behaviour change per 1,000 ticks at 900k-1M: prey ON 0.063, OFF 0.055 (terrain without predators: 0.028; part of the
+  gap may be noise from smaller prey populations, ON ~480 vs OFF ~1,720). Predators ON 0.105 vs OFF 0.020: evolving predators keep changing.
+- Family trees: still one founding prey lineage per run.
+
+Verdict: a **one-sided arms race**. Predators keep improving for the whole million ticks; prey evolve a real counter-adaptation
+(using predator information, absent at 50k) but lose ground overall. This is the first Primordia world where something keeps
+changing late, and the first new evolved use of a sense since social sensing. Next: give prey better options (speed, hiding),
+fix the random-brain newcomer rule, and test whether predators make warning signals worth sending.
