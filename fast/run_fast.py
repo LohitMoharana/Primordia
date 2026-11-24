@@ -62,13 +62,19 @@ if ck:
         print("already done"); sys.exit(0)
     # drop log lines written after this checkpoint (the run was stopped before its next save),
     # so resuming does not duplicate ticks in log.csv / novelty.csv / births.csv / cofood.csv
-    for name, col in (("log.csv", 0), ("novelty.csv", 0), ("births.csv", 0), ("cofood.csv", 0)):
+    for name, col in (("log.csv", 0), ("novelty.csv", 0), ("births.csv", 0), ("cofood.csv", 0), ("predators.csv", 0)):
         f = os.path.join(a.out_dir, name)
         if os.path.exists(f):
             lines = open(f).read().splitlines()
             keep = [lines[0]] + [ln for ln in lines[1:] if ln and float(ln.split(",")[col]) <= tick]
             open(f, "w").write("\n".join(keep) + "\n")
-    sim = FastSim.from_checkpoint(path, out_dir=a.out_dir)
+    with open(path, "rb") as _f:
+        _has_pred = "pred" in pickle.load(_f)
+    if _has_pred:
+        from predators import PredSim
+        sim = PredSim.from_checkpoint(path, out_dir=a.out_dir)
+    else:
+        sim = FastSim.from_checkpoint(path, out_dir=a.out_dir)
     print(f"resuming from tick {tick}")
 else:
     if a.mode:
@@ -88,6 +94,9 @@ else:
     if a.engine == "torch":
         from engine_torch import TorchSim
         sim = TorchSim(seed=a.seed, out_dir=a.out_dir, founders=F, device=a.device, **kw)
+    elif "predators" in kw:
+        from predators import PredSim
+        sim = PredSim(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)
     else:
         sim = FastSim(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)
 sim.checkpoint_every = a.checkpoint_every or (10000 if a.ticks >= 100000 else 2500)

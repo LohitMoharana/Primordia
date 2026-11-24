@@ -103,3 +103,18 @@ MODES.update({
     "terrain_language": dict(name="35_terrain_language", prefix="language", ticks=100000, founders="stage5",
                              kw=lambda on: _terrain(language=on)),
 })
+
+# ---------------------------------------------------------------------------
+# ARMS RACE (sparse world v2 + a second species): predators with their own
+# evolving brains hunt the prey (predators.py). ON: predators evolve (mutation);
+# OFF: predators reproduce as exact copies, so only the prey can change.
+# Both arms: same founders (300 evolved stage-5 prey, 60 random-brain predators).
+ARMS = dict(SPARSE2, predators=True, pred_delay=3000, catch_p=0.2)
+
+def _arms(**over):
+    d = dict(ARMS); d.update(over); return d
+
+MODES.update({
+    "arms_race": dict(name="40_arms_race", prefix="predevolve", ticks=1000000, founders="stage5",
+                      kw=lambda on: _arms(pred_evolve=on)),
+})

@@ -388,8 +388,9 @@ class FastSim:
         X[:, P_HAZ:P_HAZ + 25] = g[3]
         X[:, P_COFOOD:P_COFOOD + 25] = g[4] > 0
         X[:, P_SIG2:P_SIG2 + 25] = g[5]
-        if self.wall.any():
-            X[:, P_PRED:P_PRED + 25] = self.wall.ravel()[flat] > 0
+        sg = self._pred_slot_grid()
+        if sg.any():
+            X[:, P_PRED:P_PRED + 25] = sg.ravel()[flat] > 0
         X[:, P_EXTRA] = self.energy[idx] / MAX_ENERGY
         X[:, P_EXTRA + 1] = self.age[idx] / MAX_AGE
         return X
@@ -555,12 +556,13 @@ class FastSim:
         e = self.energy[idx]
         # cofood_visible=False: shared food still exists and can be eaten, but agents cannot see it
         cof_seen = self.cofood_grid if self.cfg.get("cofood_visible", True) else np.zeros_like(self.cofood_grid)
+        sg = self._pred_slot_grid()
         sense_think(idx, xs, ys, e, ages.astype(np.float64), self.food, occ, sig, self.hazard,
                     cof_seen, bool(self.cfg["social_sensing"]), self.w1, self.b1,
                     self.w2, self.b2, r.random(n), MAX_ENERGY, float(MAX_AGE), act,
                     bool(self.cfg.get("memory", False)), self.wh, self.hstate,
                     sig2, self.ws, self.bs, r.random(n), SIG0, N_SYMBOLS, sym2,
-                    self.wall, bool(self.wall.any()))
+                    sg, bool(sg.any()))
         self.last_sym2[idx] = sym2
         self._count_actions(act)
         keys = r.random(n)
@@ -597,6 +599,14 @@ class FastSim:
         if len(r_):
             self._spawn_children(idx[r_])
         self.tick += 1
+
+    def _pred_slot_grid(self):
+        """What agents sense in inputs 125-149: walls (terrain) and/or predators (predators.py)."""
+        ps = getattr(self, "pred_sense", None)
+        return self.wall if ps is None else np.maximum(self.wall, ps)
+
+    def _checkpoint_extra(self):
+        return {}
 
     def _count_actions(self, act):
         if getattr(self, "_act_counts", None) is None:
@@ -758,6 +768,7 @@ class FastSim:
                     rng_state=self.rng.bit_generator.state, engine="fast-v1",
                     patch_xy=getattr(self, "patch_xy", None), patch_dir=getattr(self, "patch_dir", None),
                     regrow_map=getattr(self, "regrow_map", None), wall=self.wall)
+        data.update(self._checkpoint_extra())
         path = os.path.join(self.out_dir, f"checkpoint_{self.tick}.pkl")
         with open(path + ".tmp", "wb") as f:  # write, then rename: a killed run never leaves a half-written save
             pickle.dump(data, f)
