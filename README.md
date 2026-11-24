@@ -1,71 +1,140 @@
-# Primordia
+<p align="center">
+  <img src="docs/img/hero.png" alt="A Primordia terrain world: 2,241 evolved agents moving between 16 walled rooms of drifting food" width="100%">
+</p>
 
-An artificial-life world where simple agents evolve with **nothing scripted**. Agents have small neural-network brains, sense their surroundings, eat, move, signal and reproduce with mutation. Whatever behaviour appears has to be discovered by evolution, not written in.
+<p align="center">
+  <b>Tiny neural-network creatures, one shared world, and evolution doing all the work.</b><br>
+  No behaviour is scripted. Everything they do, they had to discover.
+</p>
 
-The question: what does a world need before agents evolve something genuinely new (cooperation, communication, memory, language) rather than the obvious "find food, eat, stay near others"?
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/engine-NumPy%20%2B%20Numba-013243?logo=numpy&logoColor=white" alt="NumPy + Numba">
+  <img src="https://img.shields.io/badge/GPU-PyTorch-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch">
+  <img src="https://img.shields.io/badge/speed-~180x%20original-2ea44f" alt="~180x faster">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
+</p>
 
-## How experiments work
+---
 
-Every feature is tested as an **ablation**: two worlds with the same brain architecture and the same founders, differing in one feature only. Each pair is run on many random seeds (usually 10).
+## 🧬 The idea
 
-Verdicts come from **lesion tests**, not survival alone: take the evolved agents, give them equal energy and age, and compare them with and without the feature's information. Early single-seed "wins" turned out to be noise, so a result counts only if it holds across seeds.
+Drop a few hundred random brains into a world with food, walls and each other. Let the ones that eat survive and reproduce with small mutations. Repeat for a million ticks.
 
-## Results so far
+**What does a world need before its creatures evolve something genuinely new** (cooperation, memory, a language) instead of the obvious "find food, eat, stay near others"?
 
-| Feature | Verdict |
-|---|---|
-| Social sensing (seeing crowding nearby) | **Real and used.** Removing it cuts eating on 10/10 seeds. |
-| Communication (4 symbols) | Not used. |
-| Seasons | No better brains (an earlier "advantage" was an artefact of test timing). |
-| Hazards (poison cells) | **Poison avoidance is real.** |
-| Working memory | Does not help, even when memory weights start at zero. |
-| Shared food (needs two eaters) | No coordination; agents just crowd. |
-| Two-symbol language | Not used in open worlds. **First hint in terrain** (walls and rooms): better survival on 5/5 seeds vs 2/5 and +0.15 energy in lesion tests, but signals carry little information. Being checked on more seeds. |
+Primordia is an experiment-by-experiment search for that answer, with every claim held to a strict test.
 
-Also measured: a **novelty meter** (behaviour change per 1,000 ticks levels off at about 0.06) and **family trees** (every run ends descended from one of 300 founders).
+## ⚙️ How a creature works
 
-Full write-up, with every table and correction: [`FINDINGS.md`](FINDINGS.md).
-
-## Code
-
-| Folder | What it is |
-|---|---|
-| `fast/` | The current engine. `engine.py` (NumPy + Numba, ~110-180x the original), `engine_torch.py` (PyTorch/GPU), `kernels.py`, run and batch scripts, analysis and lesion tools. |
-| `stages/` | The original pure-Python engine, one folder per roadmap stage (01 social sensing to 13 shared food). Includes the 300 evolved stage-5 founders (`stages/05_hazards/runs/hazards_on_seed1/checkpoint_23500.pkl`) that later experiments start from. |
-| `lab/` | Tools for the original engine: survival evaluation, replication, analyses. |
-| `docs/notes/` | Older handoff notes and per-experiment write-ups. |
-
-Run outputs (logs and checkpoints, tens of GB) are not in the repo.
-
-## Quick start
-
-```bash
-pip install numpy numba          # torch optional, for the GPU engine
-# one run: terrain world with two-symbol language, 100,000 ticks
-python fast/run_fast.py fast/runs/test --mode terrain_language --arm on --seed 1 --ticks 100000
-# a batch: both arms, 5 seeds, 8 runs at a time (resumable)
-python fast/replicate_modes.py --modes terrain_language --seeds 1 2 3 4 5 --jobs 8
-# lesion test on a saved population
-python -c "import sys; sys.path.insert(0,'fast'); import evaluate_fast as v; p='fast/runs/test/checkpoint_100000.pkl'; print(v.profile(p, reset_state=True), v.profile(p, reset_state=True, override={'language': False}))"
+```mermaid
+flowchart LR
+    W[("🌍 World<br/>food · walls · poison<br/>other agents · signals")] -->|senses 227 inputs| B["🧠 Brain<br/>small neural net<br/>(+ optional memory)"]
+    B -->|picks 1 of 14 actions| A["🦠 Act<br/>move · eat · signal<br/>reproduce · share · mark"]
+    A -->|changes| W
+    A -->|enough energy| R["👶 Offspring<br/>copied brain + mutation"]
+    R --> W
 ```
 
-Modes (see `fast/modes.py`): `stage1`, `stage2`, `stage3`, `stage5`, `stage13`, `sparse2_memory`, `sparse2_memory0`, `sparse2_comm`, `sparse2_language`, `sparse2_cofood`, `terrain_language`.
+Each tick, every agent senses its surroundings, its brain picks an action, and the world updates. Energy is the only currency: run out and you die, collect enough and you split into a mutated child.
 
-Speed on a laptop (16 threads): about 160 ticks/s with ~10,400 agents on the CPU engine.
+## 🔬 How we know what's real
 
-## Roadmap
+Early on, single runs produced exciting "discoveries" that turned out to be luck. Every result now has to pass two checks:
 
-1. ~~Fast engine and GPU version~~ (done)
-2. ~~Sparse world: drifting food patches, terrain~~ (done)
-3. Long runs (1,000,000 ticks) with novelty meter and family trees (running)
-4. Worlds that push for novelty:
-   - an **arms race** with predators that evolve too
-   - **several ways to live** (food types needing different skills)
-   - agents that **change the world** (storing food, building, lasting marks)
-5. Bigger brains, only where needed
-6. Many-seed sweeps
-7. 3D, much later
+1. **Ablation across 10 seeds:** two worlds that differ in exactly one feature, each run on many random seeds.
+2. **Lesion test:** take the evolved creatures, give them equal energy and age, then switch the feature off in their heads. If performance doesn't drop, they weren't using it.
 
-## License
+## 📊 What we've found
 
-MIT, see [`LICENSE`](LICENSE).
+| | Feature | Verdict |
+|:-:|---|---|
+| ✅ | **Social sensing** | Real and used. Switching it off cuts eating on **10/10** seeds. |
+| ✅ | **Poison avoidance** | Real. Creatures learn to steer around hazards. |
+| 🟡 | **Two-symbol language** | First hint, in walled terrain: language worlds survived **5/5** seeds vs **2/5** without. Signals still carry little meaning. *Being tested on more seeds.* |
+| ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
+| ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
+| ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
+| ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
+
+<p align="center">
+  <img src="docs/img/evolution.png" alt="Founding families collapse to one within 20,000 ticks; behaviour change levels off around 0.05" width="100%">
+</p>
+
+**Every world ends up descended from a single founder out of 300, and behaviour settles down within ~50,000 ticks.** Evolution finds one good way to live and stops exploring. That's the problem the next stage of the project attacks.
+
+📖 The full lab notebook, with every table, correction and dead end, is in [`FINDINGS.md`](FINDINGS.md).
+
+## 🗺️ Roadmap
+
+- [x] **Fast engine:** NumPy + Numba rewrite, ~110–180× faster, plus a PyTorch/GPU version
+- [x] **Sparse world:** drifting, vanishing food clusters and walled terrain
+- [ ] **Long runs:** 1,000,000 ticks with a novelty meter and family trees *(running now)*
+- [ ] **Worlds that push for novelty**
+  - [ ] ⚔️ An arms race: predators that evolve too
+  - [ ] 🍄 Several ways to live: food types that need different skills
+  - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
+- [ ] Bigger brains, only where they're needed
+- [ ] Large many-seed sweeps
+- [ ] 🌐 3D
+
+## 🚀 Try it
+
+```bash
+pip install numpy numba            # add torch for the GPU engine
+
+# evolve a walled world where agents can talk, for 100,000 ticks
+python fast/run_fast.py fast/runs/demo --mode terrain_language --arm on --seed 1 --ticks 100000
+
+# run a full experiment: language on vs off, 5 seeds, 8 at a time (resumable)
+python fast/replicate_modes.py --modes terrain_language --seeds 1 2 3 4 5 --jobs 8
+```
+
+<details>
+<summary><b>Lesion-test a population you evolved</b></summary>
+
+```python
+import sys; sys.path.insert(0, "fast")
+import evaluate_fast as v
+
+ckpt = "fast/runs/demo/checkpoint_100000.pkl"
+with_lang    = v.profile(ckpt, reset_state=True)
+without_lang = v.profile(ckpt, reset_state=True, override={"language": False})
+print(with_lang["energy"] - without_lang["energy"])   # > 0 means they use it
+```
+</details>
+
+<details>
+<summary><b>All experiment modes</b></summary>
+
+Defined in [`fast/modes.py`](fast/modes.py):
+
+| Mode | What differs between the two arms |
+|---|---|
+| `stage1` | Social sensing |
+| `stage2` | Communication |
+| `stage3` | Seasons |
+| `stage5` | Poison hazards |
+| `stage13` | Shared food |
+| `sparse2_memory` / `sparse2_memory0` | Working memory (inherited / starting at zero) |
+| `sparse2_comm` | Communication in a sparse world |
+| `sparse2_language` | Two-symbol language in a sparse world |
+| `sparse2_cofood` | Shared food in a sparse world |
+| `terrain_language` | Two-symbol language in a walled world |
+</details>
+
+## 🗂️ Repository
+
+```
+fast/      the current engine (engine.py, kernels.py, engine_torch.py), run + analysis tools
+stages/    the original engine, one folder per experiment (01 social sensing … 13 shared food)
+           + the 300 evolved founders later experiments start from
+lab/       evaluation and replication tools for the original engine
+docs/      images and older notes
+```
+
+Run outputs (logs and saved worlds, tens of GB) are kept locally, not in the repo.
+
+## 📄 License
+
+MIT. See [`LICENSE`](LICENSE).
