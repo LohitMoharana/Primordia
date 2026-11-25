@@ -221,3 +221,14 @@ MODES.update({
     "ways_pred": dict(name="51_ways_pred", prefix="buried", ticks=300000, founders="stage5",
                       kw=lambda on: dict(WAYS_PRED, buried=on)),
 })
+
+# FOOD STORAGE, private versions: public stores were raided (tragedy of the commons: storing
+# was selected against). Here only the owner (storage_private) or its family: parent,
+# children, siblings (storage_family) can take from a store, and nobody can add to a
+# store someone else owns. ON: private storage. OFF: storage does nothing.
+MODES.update({
+    "storage_private": dict(name="61_storage_private", prefix="storage", ticks=100000, founders="stage5",
+                            kw=lambda on: _store(storage=on, store_access="owner")),
+    "storage_family": dict(name="62_storage_family", prefix="storage", ticks=100000, founders="stage5",
+                           kw=lambda on: _store(storage=on, store_access="family")),
+})

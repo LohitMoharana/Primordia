@@ -12,7 +12,9 @@ generations live in a world partly built by earlier ones.
   spoil     each store loses `spoil` of its contents per tick.
   sensing   stores within 2 cells, in inputs 150-174 (the unused marker slot).
 
-Stores are public: anyone standing on one can take from it. storage.csv logs how much is
+Access (store_access): "public" (anyone standing on a store can take from it), "owner" (only
+the creature that stored there; others cannot add to it either), or "family" (that creature,
+its parent, its children and its siblings). storage.csv logs how much is
 stored, deposits, retrievals, and how much of what was taken came back to the creature
 that put it there (the last depositor of the cell) versus someone else.
 
@@ -34,12 +36,15 @@ TAKE_AMOUNT = 0.5
 class StoreSim(PredSim):
     _METER = PredSim._METER + ["_store_stats"]
 
-    def __init__(self, *args, storage=True, spoil=0.001, store_cap=20.0, predators=False, **kw):
+    def __init__(self, *args, storage=True, spoil=0.001, store_cap=20.0, store_access="public", predators=False, **kw):
         super().__init__(*args, predators=predators, **kw)
-        self.cfg.update(storage=bool(storage), spoil=float(spoil), store_cap=float(store_cap))
+        assert store_access in ("public", "owner", "family")
+        self.cfg.update(storage=bool(storage), spoil=float(spoil), store_cap=float(store_cap),
+                        store_access=str(store_access))
         S = self.size
         self.store = np.zeros((S, S))
         self.store_owner = np.full((S, S), -1, np.int64)  # id of the last creature to deposit here
+        self.store_owner_parent = np.full((S, S), -1, np.int64)  # that creature's parent (for "family")
         self._store_stats = self._new_stats()
 
     @staticmethod
@@ -61,6 +66,11 @@ class StoreSim(PredSim):
         touched = []
         # deposits (start-of-tick cell, like eating); a creature keeps at least 1 energy
         dep = np.flatnonzero((act == A["mark"]) & (dead == 0))
+        if len(dep) and c.get("store_access", "public") != "public":
+            # private stores: you cannot add to a store someone else owns (an empty cell is free to claim)
+            own = self.store_owner[x0[dep], y0[dep]]
+            free = (self.store[x0[dep], y0[dep]] <= 1e-9) | (own == self.aid[idx[dep]])
+            dep = dep[free]
         if len(dep):
             room = np.maximum(0.0, c["store_cap"] - self.store[x0[dep], y0[dep]])
             amt = np.minimum(np.minimum(STORE_AMOUNT, np.maximum(0.0, e[dep] - 1.0)), room)
@@ -70,11 +80,22 @@ class StoreSim(PredSim):
                 e[dep] -= amt
                 np.add.at(self.store, (x0[dep], y0[dep]), amt)
                 self.store_owner[x0[dep], y0[dep]] = self.aid[idx[dep]]
+                self.store_owner_parent[x0[dep], y0[dep]] = self.parent[idx[dep]]
                 st["deposits"] += len(dep)
                 st["deposited"] += float(amt.sum())
                 touched.append(dep)
         # retrievals: takers in one cell in random-key order, up to TAKE_AMOUNT each
         tk = np.flatnonzero((act == A["mate"]) & (dead == 0))
+        access = c.get("store_access", "public")
+        if len(tk) and access != "public":
+            # owner: only the creature that stored here; family: it, its parent, its children and its siblings
+            ow = self.store_owner[x0[tk], y0[tk]]
+            me, mypar = self.aid[idx[tk]], self.parent[idx[tk]]
+            ok = me == ow
+            if access == "family":
+                op = self.store_owner_parent[x0[tk], y0[tk]]
+                ok |= (mypar == ow) | ((me == op) & (op >= 0)) | ((mypar == op) & (op >= 0))
+            tk = tk[ok]
         if len(tk):
             cell = x0[tk] * S + y0[tk]
             order = np.lexsort((keys[tk], cell))
@@ -129,7 +150,7 @@ class StoreSim(PredSim):
     # ---------------------------------------------------------------- save / load
     def _checkpoint_extra(self):
         d = super()._checkpoint_extra()
-        d.update(store=self.store, store_owner=self.store_owner)
+        d.update(store=self.store, store_owner=self.store_owner, store_owner_parent=self.store_owner_parent)
         return d
 
     @classmethod
@@ -139,6 +160,7 @@ class StoreSim(PredSim):
             d = pickle.load(f)
         sim.store = d["store"]
         sim.store_owner = d["store_owner"]
+        sim.store_owner_parent = d.get("store_owner_parent", np.full_like(d["store_owner"], -1))
         if not hasattr(sim, "_store_stats"):
             sim._store_stats = cls._new_stats()
         return sim
