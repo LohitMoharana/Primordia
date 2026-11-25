@@ -1,0 +1,144 @@
+"""
+Compare worlds with MODES (oee_modes.py), the published open-ended-evolution metrics.
+
+Each world runs on fresh seeds; MODES change / novelty / diversity / complexity are measured
+every 500 ticks with a 5000-tick persistence filter. Worlds:
+
+    start                 the healthy default world (asal_world.default_start)
+    best:<dir>            the best world of an ASAL search (reads <dir>/best.txt)
+    u:[0.1, 0.5, ...]     any point of the search space
+
+    python fast/modes_compare.py --worlds start best:fast/runs/asal_open3 --seeds 10 --ticks 100000 --jobs 16
+
+Output (--out): runs.csv (one line per run), timeline.csv (every snapshot), summary printed
+with a permutation test between the first two worlds. Each run is saved when it finishes,
+so a stopped comparison resumes.
+"""
+import argparse
+import csv
+import json
+import os
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+import numpy as np
+
+import asal_world as AW
+import oee_modes as M
+
+METRICS = ["change", "novelty", "diversity", "complexity"]
+
+
+def world_u(spec):
+    if spec == "start":
+        return AW.default_start()
+    if spec.startswith("best:"):
+        lines = open(os.path.join(spec[5:], "best.txt")).read().splitlines()
+        return np.array(json.loads(lines[-1]))
+    if spec.startswith("u:"):
+        return np.array(json.loads(spec[2:]))
+    raise SystemExit(f"unknown world {spec}")
+
+
+def run_one(job):
+    AW.worker_init()
+    t0 = time.time()
+    sim = AW.make_sim(AW.decode(np.array(job["u"])), job["seed"])
+    T = M.ModesTracker(M.load_probes(), job["resolution"], job["interval"])
+    T.attach(sim)
+    status = "ok"
+    while sim.tick < job["ticks"]:
+        sim.step()
+        T.update(sim)
+        if sim.population == 0:
+            status = f"extinct@{sim.tick}"
+            break
+        if sim.population > job["pop_cap"]:
+            status = f"exploded@{sim.tick}"
+            break
+    s = T.summary()
+    return dict(world=job["world"], seed=job["seed"], status=status, final_pop=sim.population,
+                secs=round(time.time() - t0), rows=T.rows, **s)
+
+
+def perm_test(a, b, n=20000, seed=0):
+    """Two-sided permutation test on the difference of means."""
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    obs = abs(a.mean() - b.mean())
+    x = np.concatenate([a, b])
+    r = np.random.default_rng(seed)
+    hits = sum(abs((p := r.permutation(x))[:len(a)].mean() - p[len(a):].mean()) >= obs - 1e-12 for _ in range(n))
+    return (hits + 1) / (n + 1)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--worlds", nargs="+", default=["start"])
+    ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--first-seed", type=int, default=1001, help="fresh seeds, never used by the searches")
+    ap.add_argument("--ticks", type=int, default=100000)
+    ap.add_argument("--resolution", type=int, default=500)
+    ap.add_argument("--interval", type=int, default=5000, help="persistence filter (about 25 generations)")
+    ap.add_argument("--pop-cap", type=int, default=20000)
+    ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("--out", default=os.path.join(HERE, "runs", "modes_compare"))
+    a = ap.parse_args()
+    os.makedirs(a.out, exist_ok=True)
+    M.load_probes()  # make the probe file once, before the workers start
+    runs_path, tl_path = os.path.join(a.out, "runs.csv"), os.path.join(a.out, "timeline.csv")
+    done = set()
+    if os.path.exists(runs_path):
+        done = {(r["world"], int(r["seed"])) for r in csv.DictReader(open(runs_path))}
+    else:
+        with open(runs_path, "w", newline="") as f:
+            csv.writer(f).writerow(["world", "seed", "status", "final_pop", "secs", "snapshots"] + METRICS + ["settings"])
+        with open(tl_path, "w", newline="") as f:
+            csv.writer(f).writerow(["world", "seed", "tick", "change", "novelty", "diversity", "complexity", "filter_on"])
+    jobs = []
+    for w in a.worlds:
+        u = world_u(w)
+        for s in range(a.first_seed, a.first_seed + a.seeds):
+            if (w, s) not in done:
+                jobs.append(dict(world=w, u=[float(v) for v in u], seed=s, ticks=a.ticks, resolution=a.resolution,
+                                 interval=a.interval, pop_cap=a.pop_cap))
+    print(f"{len(jobs)} runs to do ({len(done)} already done); {a.jobs} at a time", flush=True)
+    for w in a.worlds:
+        print(f"  {w}: {AW.describe(world_u(w))}")
+    os.environ.setdefault("NUMBA_NUM_THREADS", "1")
+    import multiprocessing as mp
+    with mp.get_context("spawn").Pool(a.jobs, initializer=AW.worker_init) as pool:
+        for r in pool.imap_unordered(run_one, jobs):
+            with open(runs_path, "a", newline="") as f:
+                csv.writer(f).writerow([r["world"], r["seed"], r["status"], r["final_pop"], r["secs"], r["snapshots"]] +
+                                       [round(r[m], 4) for m in METRICS] + [AW.describe(world_u(r["world"]))])
+            with open(tl_path, "a", newline="") as f:
+                csv.writer(f).writerows([[r["world"], r["seed"], x[0], x[1], x[2], round(x[3], 4), x[4], int(x[5])]
+                                         for x in r["rows"]])
+            print(f"{r['world']} seed {r['seed']}: {r['status']}, {r['final_pop']} creatures, "
+                  + ", ".join(f"{m} {r[m]:.2f}" for m in METRICS) + f"  ({r['secs']} s)", flush=True)
+    rows = list(csv.DictReader(open(runs_path)))
+    print("\nworld                 runs  survived   " + "   ".join(f"{m:>16s}" for m in METRICS))
+    by = {}
+    for w in a.worlds:
+        rs = [r for r in rows if r["world"] == w]
+        by[w] = rs
+        ok = sum(r["status"] == "ok" for r in rs)
+        cells = []
+        for m in METRICS:
+            v = np.array([float(r[m]) for r in rs])
+            cells.append(f"{v.mean():7.2f} +- {v.std(ddof=1) if len(v) > 1 else 0:5.2f}")
+        print(f"{w[:20]:20s}  {len(rs):4d}  {ok:4d}/{len(rs):<4d}  " + "   ".join(cells))
+    if len(a.worlds) >= 2 and all(len(by[w]) > 1 for w in a.worlds[:2]):
+        w1, w2 = a.worlds[:2]
+        print(f"\npermutation test, {w1} vs {w2} (two-sided p):")
+        for m in METRICS:
+            p = perm_test([float(r[m]) for r in by[w1]], [float(r[m]) for r in by[w2]])
+            print(f"  {m:10s} p = {p:.4f}")
+        print("(dead worlds count with whatever they reached before dying; see 'survived')")
+
+
+if __name__ == "__main__":
+    main()
