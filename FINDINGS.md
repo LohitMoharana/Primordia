@@ -1233,3 +1233,19 @@ size genomes) point the same way. This is the controlled test, mode `open_brains
   the start), gifts break even. A first version on the several-ways-to-live world died out in 6/6 runs (without
   the 2x gift loophole that world has too little food) and was discarded.
 - 10 seeds per arm, 100,000 ticks, measured with MODES plus brain sizes (everyone; roots of persistent lineages).
+
+## Open brains: results (25 Nov 2026, 100k ticks, 10 seeds per arm)
+
+| | survived | MODES novelty | change | diversity (bits) | brain units, everyone | largest brain | units, persistent lineages |
+|---|---|---|---|---|---|---|---|
+| ON (no size limit) | 10/10 | 62.7 +- 24.6 | 2.05 | 2.49 | 24.8 | 32.2 | 24.9 |
+| OFF (capped at the founders' 24 wired units) | 10/10 | 74.7 +- 23.7 | 2.42 | 2.78 | 23.9 | 30.8 | 23.8 |
+
+No difference (permutation tests: novelty p = 0.29, change p = 0.25, diversity p = 0.07 with the capped arm slightly
+*higher*; brain sizes p = 0.45-0.48). Brains did not grow when allowed to: about one unit above the founders' 24 on
+average after ~500 generations, and the largest brains no bigger than drift in the capped arm. So the fixed brain size
+is not what holds Primordia back: extra neurons do not pay for their cost when a creature can only sense the same 227
+inputs and choose among the same 14 actions. If Soros & Stanley's condition 4 is the bottleneck here, the limit is on
+what creatures can sense and do (fixed senses, a fixed action set), not on brain size. Condition 2 (evolution creating
+new opportunities for others) is the other candidate. Next: a MODES-scored search over kinds of world
+(`modes_search.py`) to see which world features keep lasting novelty going.

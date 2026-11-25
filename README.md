@@ -62,6 +62,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
+| ❌ | **Open brains** (no fixed brain size; Soros & Stanley's condition 4) | Brains don't grow when allowed to (24.8 vs 23.9 units after 100k ticks), and lasting novelty is no higher (MODES, 10 vs 10 seeds, p = 0.29). Extra neurons don't pay when senses and actions are fixed. |
 | ❌ | **Image-model search for open-ended worlds** (ASAL, applied to evolving creatures) | Its top-rated world died out in **9/10** fresh runs and produced about a fifth of the lasting new strategies of the plain world (MODES, p = 0.0001). Picture novelty rewards boom-and-bust, not lasting evolution. Along the way it found three loopholes (near-dead, shrinking and crashing worlds all "look new"). |
 
 <p align="center">
@@ -82,7 +83,8 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
   - [x] 🍄 Several ways to live: food types that need different skills *(two-niche split on 3/7 worlds, stable to 1M ticks)*
   - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
 - [x] 📏 Measure open-endedness the published way: MODES (Dolson et al. 2019) and ASAL (Kumar et al. 2024) on Primordia
-- [ ] 🧠 Open brains: no fixed brain size (Soros & Stanley's condition 4), measured with MODES *(running)*
+- [x] 🧠 Open brains: no fixed brain size (Soros & Stanley's condition 4): **no effect**; brains don't grow when allowed to
+- [ ] 🔎 Search for the kind of world that keeps producing lasting novelty (ASAL's search, scored with MODES)
 - [ ] Large many-seed sweeps
 - [ ] 🌐 3D
 
