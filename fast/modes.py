@@ -178,3 +178,18 @@ MODES.update({
     "storage": dict(name="60_storage", prefix="storage", ticks=100000, founders="stage5",
                     kw=lambda on: _store(storage=on)),
 })
+
+# ---------------------------------------------------------------------------
+# AGENTS CHANGE THE WORLD, part 2: BUILDING SHELTERS (building.py). The round-2b arms-race
+# world (evolving predators, slow newcomers, 2 energy per catch), no placed shelters.
+# ON: the "mark" action builds a shelter on the creature's cell (1.5 energy); shelters
+# crumble with probability 1/1000 per tick. OFF: the action does nothing.
+BUILD = dict(ARMS2B, build=True)
+
+def _build(**over):
+    d = dict(BUILD); d.update(over); return d
+
+MODES.update({
+    "build": dict(name="70_build", prefix="build", ticks=300000, founders="stage5",
+                  kw=lambda on: _build(build=on)),
+})

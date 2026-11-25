@@ -1056,3 +1056,14 @@ sensed in inputs 150-174. OFF: the same actions and costs, no effect. `storage.c
 what was taken came back to the last depositor. `fast/analyze_storage.py --tests`: store/take rates in good vs lean halves of the
 season, and lesions (storage off + stores emptied; blind to stores) over 450 ticks with energy 5 and age 0.
 Checks: both arms survive 30k-tick calibration (seed 1); resume is byte-identical; other modes unchanged.
+
+## Building shelters: set-up (25 Nov 2026)
+
+Mode `build` (`fast/building.py`), "agents change the world" part 2: the round-2b arms-race world with no placed shelters.
+ON: the unused "mark" action turns the creature's own cell into a shelter for 1.5 energy (only with more than 2.5 energy); shelters
+are the round-2 kind (predators cannot catch prey there, no food grows there, prey sense them in inputs 100-124) and crumble with
+probability 1/1000 per tick, so they can outlive their builder. OFF: the action does nothing. `building.csv` logs shelters standing,
+built, crumbled and prey inside. Calibration (seeds 1-2, 45k ticks): with 1.0 energy and 1/3000 crumbling, random early building
+covered ~15% of the world and starved prey; with 1.5 and 1/1000: 3-8% of cells, prey 800-1,600. Resume byte-identical.
+Analysis for arms 2b and building: `fast/analyze_arms2.py <folder> [--tests]` (survival, prey in shelters vs shelter cells,
+Red Queen 2x2, prey blind to predators / to shelters).
