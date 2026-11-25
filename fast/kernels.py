@@ -22,7 +22,8 @@ if HAVE_NUMBA:
     @njit(parallel=True, fastmath=False, cache=True)
     def sense_think(idx, xs, ys, energy, age, food, occ, sig, haz, cof,
                     social, w1, b1, w2, b2, u, max_energy, max_age, out_act,
-                    memory, wh, hstate, sig2, ws, bs, u2, sig0, nsym, out_sym2, wall, has_wall):
+                    memory, wh, hstate, sig2, ws, bs, u2, sig0, nsym, out_sym2, wall, has_wall,
+                    kin, has_kin):
         S = food.shape[0]
         n = idx.shape[0]
         H = b1.shape[1]
@@ -96,6 +97,12 @@ if HAVE_NUMBA:
                 for c in range(25):
                     if wall[cxs[c], cys[c]] != 0.0:
                         wr = w1[a, 125 + c]
+                        for j in range(H):
+                            h[j] += wr[j]
+            if has_kin:  # shelters nearby (inputs 100-124, the unused kin slot)
+                for c in range(25):
+                    if kin[cxs[c], cys[c]] != 0.0:
+                        wr = w1[a, 100 + c]
                         for j in range(H):
                             h[j] += wr[j]
             for c in range(25):
@@ -469,7 +476,7 @@ if HAVE_NUMBA:
 
     @njit(cache=True)
     def pred_attacks(att, perm, x0, y0, prey_idx, order, cs, alive, ua, uc, catch_p, kill_gain,
-                     e, S, stats):
+                     e, S, stats, safe):
         """Attacks in random order (perm); each picks a random live prey within radius 1
         of the attacker's start-of-tick cell and catches it with probability catch_p.
         stats[0] += attacks, stats[1] += kills."""
@@ -482,6 +489,8 @@ if HAVE_NUMBA:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     cc = ((x0[j] + dx) % S) * S + (y0[j] + dy) % S
+                    if safe[cc]:
+                        continue  # prey in a shelter cannot be caught
                     lo = np.searchsorted(cs, cc)
                     hi = np.searchsorted(cs, cc, side="right")
                     for t in range(lo, hi):

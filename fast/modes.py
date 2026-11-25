@@ -118,3 +118,20 @@ MODES.update({
     "arms_race": dict(name="40_arms_race", prefix="predevolve", ticks=1000000, founders="stage5",
                       kw=lambda on: _arms(pred_evolve=on)),
 })
+
+# ---------------------------------------------------------------------------
+# ARMS RACE ROUND 2: predators evolve in both arms; newcomers (when predators fall
+# below 10) are copies of recently dead predators, not random brains.
+# ON: 3% of cells are shelters (predators cannot catch prey there; no food grows there;
+# prey sense them in inputs 100-124). OFF: no shelters.
+ARMS2 = dict(ARMS, pred_evolve=True, pred_immigrants="bank")
+
+def _arms2(**over):
+    d = dict(ARMS2); d.update(over); return d
+
+MODES.update({
+    "arms2_shelter": dict(name="41_arms2_shelter", prefix="shelter", ticks=1000000, founders="stage5",
+                          kw=lambda on: _arms2(shelter_frac=0.03 if on else 0.0)),
+    "arms2_shelter_c30": dict(name="42_arms2_shelter_c30", prefix="shelter", ticks=1000000, founders="stage5",
+                              kw=lambda on: _arms2(shelter_frac=0.03 if on else 0.0, catch_p=0.3)),
+})

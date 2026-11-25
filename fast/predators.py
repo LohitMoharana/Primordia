@@ -42,14 +42,15 @@ class PredSim(FastSim):
     def __init__(self, *args, predators=True, n_pred=60, pred_evolve=True, pred_floor=10,
                  pred_idle=0.02, pred_move=0.04, pred_attack=0.05, kill_gain=3.0, catch_p=0.5,
                  pred_max_e=15.0, pred_start_e=8.0, pred_rep_min=10.0, pred_rep_cost=6.0,
-                 pred_max_age=800, pred_delay=0, **kw):
+                 pred_max_age=800, pred_delay=0, pred_immigrants="founders", bank_size=30, **kw):
         super().__init__(*args, **kw)
         self.cfg.update(predators=bool(predators), n_pred=int(n_pred), pred_evolve=bool(pred_evolve),
                         pred_floor=int(pred_floor), pred_idle=pred_idle, pred_move=pred_move,
                         pred_attack=pred_attack, kill_gain=kill_gain, catch_p=catch_p,
                         pred_max_e=pred_max_e, pred_start_e=pred_start_e, pred_rep_min=pred_rep_min,
                         pred_rep_cost=pred_rep_cost, pred_max_age=int(pred_max_age),
-                        pred_delay=int(pred_delay))
+                        pred_delay=int(pred_delay), pred_immigrants=str(pred_immigrants), bank_size=int(bank_size))
+        self.pred_bank = None  # brains of the most recently dead predators (pred_immigrants="bank")
         r, S = self.rng, self.size
         n = int(n_pred)
         # founder pool: the original random predator brains (reused by the floor)
@@ -107,9 +108,18 @@ class PredSim(FastSim):
             n = c["n_pred"]
             self._add_pred(np.arange(n), r.integers(0, S, n), r.integers(0, S, n))
         P = self.pred
-        if self.n_pred < c["pred_floor"]:  # immigrants from the founder pool
+        if self.n_pred < c["pred_floor"]:
             k = c["pred_floor"] - self.n_pred
-            self._add_pred(r.integers(0, len(self.pred_pool["w1"]), k), r.integers(0, S, k), r.integers(0, S, k))
+            bank = self.pred_bank
+            if c.get("pred_immigrants", "founders") == "bank" and bank is not None and len(bank["w1"]):
+                # newcomers are exact copies of recently dead predators, so a crash does not
+                # throw away what predator evolution has found so far
+                pick = r.integers(0, len(bank["w1"]), k)
+                self._add_pred(None, r.integers(0, S, k), r.integers(0, S, k),
+                               brains={q: bank[q][pick].copy() for q in ("w1", "b1", "w2", "b2")},
+                               gen=bank["gen"][pick].copy())
+            else:  # random brains from the founder pool (round 1 rule)
+                self._add_pred(r.integers(0, len(self.pred_pool["w1"]), k), r.integers(0, S, k), r.integers(0, S, k))
             self.pred_stats["immigrants"] += k
         n = self.n_pred
         idx = np.flatnonzero(self.alive)
@@ -144,7 +154,7 @@ class PredSim(FastSim):
             if self._use_pred_kernel():
                 st = np.zeros(2, np.int64)
                 pred_attacks(att, perm, x0, y0, idx, order, cs, self.alive, ua, uc, float(c["catch_p"]),
-                             float(c["kill_gain"]), e, S, st)
+                             float(c["kill_gain"]), e, S, st, self.shelter.ravel() > 0)
                 self.pred_stats["attacks"] += int(st[0])
                 self.pred_stats["kills"] += int(st[1])
             else:
@@ -155,6 +165,8 @@ class PredSim(FastSim):
                     for dx in (-1, 0, 1):
                         for dy in (-1, 0, 1):
                             cc = ((x0[j] + dx) % S) * S + (y0[j] + dy) % S
+                            if self._has_shelter and self.shelter.ravel()[cc] > 0:
+                                continue  # prey in a shelter cannot be caught
                             lo, hi = np.searchsorted(cs, cc), np.searchsorted(cs, cc, side="right")
                             for s_ in order[lo:hi]:
                                 if self.alive[idx[s_]]:
@@ -184,6 +196,12 @@ class PredSim(FastSim):
         dead = (P["e"] <= 0) | (P["age"] >= c["pred_max_age"])
         if dead.any():
             self.pred_stats["deaths"] += int(dead.sum())
+            if c.get("pred_immigrants", "founders") == "bank":
+                d = np.flatnonzero(dead)
+                new = {q: P[q][d] for q in ("w1", "b1", "w2", "b2", "gen")}
+                old = self.pred_bank
+                keep = c.get("bank_size", 30)
+                self.pred_bank = new if old is None else {q: np.concatenate([old[q], new[q]])[-keep:] for q in new}
             self._keep_pred(~dead)
 
     def _use_pred_kernel(self):
@@ -234,7 +252,7 @@ class PredSim(FastSim):
 
     # ---------------------------------------------------------------- save / load
     def _checkpoint_extra(self):
-        return dict(pred=self.pred, pred_pool=self.pred_pool, pred_stats=self.pred_stats)
+        return dict(pred=self.pred, pred_pool=self.pred_pool, pred_stats=self.pred_stats, pred_bank=self.pred_bank)
 
     @classmethod
     def from_checkpoint(cls, path, out_dir=None):
@@ -245,6 +263,7 @@ class PredSim(FastSim):
                                          age=np.zeros(0, np.int64), gen=np.zeros(0, np.int64))
         sim.pred_pool = d.get("pred_pool")
         sim.pred_stats = d.get("pred_stats", dict(kills=0, attacks=0, births=0, deaths=0, immigrants=0))
+        sim.pred_bank = d.get("pred_bank")
         sim._pred_act_counts = np.zeros(P_OUT, np.int64)
         sim._prev_pred_share = None
         sim.pred_sense = None

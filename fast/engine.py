@@ -78,7 +78,8 @@ class FastSim:
                  hidden=HIDDEN_SIZE, n_actions=OUTPUT_SIZE, init_inputs=INPUT_SIZE,
                  memory=False, language=False, food_mode="uniform", n_patches=16, patch_sigma=4.0,
                  patch_speed=0.03, patch_turn=0.05, patch_peak=0.057, founders_near_patches=False,
-                 patch_life=0, zero_memory_weights=False, walls=False, wall_spacing=32, door_width=6):
+                 patch_life=0, zero_memory_weights=False, walls=False, wall_spacing=32, door_width=6,
+                 shelter_frac=0.0):
         # hidden / n_actions / init_inputs: brain shape of the stage being modelled
         # (earlier stages had fewer actions, fewer inputs, stage 1 had 16 hidden units).
         # Actions are always a prefix of ACTIONS, so a stage with 7 actions can
@@ -99,6 +100,8 @@ class FastSim:
                         patch_speed=float(patch_speed), patch_turn=float(patch_turn),
                         patch_peak=float(patch_peak), patch_life=float(patch_life), walls=bool(walls),
                         wall_spacing=int(wall_spacing), door_width=int(door_width))
+        if shelter_frac:
+            self.cfg["shelter_frac"] = float(shelter_frac)
         self.checkpoint_every = checkpoint_every
         self.use_numba = HAVE_NUMBA
         self._complexity = (None, 0.0)
@@ -119,6 +122,14 @@ class FastSim:
                     self.wall[k, d:d + door_width] = 0.0   # doorway in the horizontal wall
                     d = int(r.integers(s0 + 1, s0 + wall_spacing - door_width))
                     self.wall[d:d + door_width, k] = 0.0   # doorway in the vertical wall
+        # SHELTERS (arms race round 2): scattered cells where predators cannot catch prey;
+        # no food grows there. Drawn from their own random stream (so the rest of the world
+        # is the same as without shelters) and sensed in inputs 100-124 (the unused kin slot).
+        self.shelter = np.zeros((size, size))
+        if shelter_frac:
+            self.shelter = (np.random.default_rng([int(seed), 7919]).random((size, size)) < shelter_frac) * 1.0
+            self.shelter[self.wall > 0] = 0.0
+        self._has_shelter = bool(self.shelter.any())
         self.food = r.uniform(0, max_food, (size, size))
         self.food *= (r.random((size, size)) < 0.3)
         if food_mode == "patches":
@@ -133,6 +144,7 @@ class FastSim:
             self._update_patch_map()
             self.food = max_food * (r.random((size, size)) < self.regrow_map / patch_peak * 0.5)
         self.food[self.wall > 0] = 0.0
+        self.food[self.shelter > 0] = 0.0
         self.hazard = np.zeros((size, size))
         self.cofood_grid = np.zeros((size, size))
         self.cofood_age = np.zeros((size, size))
@@ -271,6 +283,8 @@ class FastSim:
         self.regrow_map = np.minimum(c["patch_peak"] * np.einsum("kx,ky->xy", gx, gy), 1.0)
         if getattr(self, "wall", None) is not None and self.wall.any():
             self.regrow_map = self.regrow_map * (1.0 - self.wall)  # no food grows on walls
+        if getattr(self, "shelter", None) is not None and self.shelter.any():
+            self.regrow_map = self.regrow_map * (1.0 - self.shelter)  # nor in shelters
 
     def _sample_patch_cell(self):
         cum = np.cumsum(self.regrow_map.ravel())
@@ -328,6 +342,8 @@ class FastSim:
         else:
             F[(F < 0.05) & (rr < p)[None]] = c["max_food"]
             np.clip(F, 0, c["max_food"], out=F)
+        if self._has_shelter:
+            F[:, self.shelter > 0] = 0.0  # nothing grows in shelters (uniform mode; patches mode masks the map)
 
     def _cofood_step(self, F):
         c, r, S = self.cfg, self.rng, self.size
@@ -391,6 +407,8 @@ class FastSim:
         sg = self._pred_slot_grid()
         if sg.any():
             X[:, P_PRED:P_PRED + 25] = sg.ravel()[flat] > 0
+        if self._has_shelter:
+            X[:, P_KIN:P_KIN + 25] = self.shelter.ravel()[flat] > 0
         X[:, P_EXTRA] = self.energy[idx] / MAX_ENERGY
         X[:, P_EXTRA + 1] = self.age[idx] / MAX_AGE
         return X
@@ -412,6 +430,8 @@ class FastSim:
         pre += np.einsum("ni,nih->nh", Xf[:, P_SIG2:P_COFOOD], w1[:, P_SIG2:P_COFOOD], optimize=False)
         pre += np.einsum("ni,nih->nh", Xf[:, P_PRED:P_MARK], w1[:, P_PRED:P_MARK], optimize=False)
         pre += np.einsum("ni,nih->nh", Xf[:, P_COFOOD:], w1[:, P_COFOOD:], optimize=False)
+        if self._has_shelter:
+            pre += np.einsum("ni,nih->nh", Xf[:, P_KIN:P_PRED], w1[:, P_KIN:P_PRED], optimize=False)
         if self.cfg.get("memory", False):
             pre += np.einsum("ni,nij->nj", self.hstate[:hi], self.wh[:hi], optimize=False)
         h = np.tanh(pre + self.b1[:hi])
@@ -562,7 +582,7 @@ class FastSim:
                     self.w2, self.b2, r.random(n), MAX_ENERGY, float(MAX_AGE), act,
                     bool(self.cfg.get("memory", False)), self.wh, self.hstate,
                     sig2, self.ws, self.bs, r.random(n), SIG0, N_SYMBOLS, sym2,
-                    sg, bool(sg.any()))
+                    sg, bool(sg.any()), self.shelter, bool(self._has_shelter))
         self.last_sym2[idx] = sym2
         self._count_actions(act)
         keys = r.random(n)
@@ -766,7 +786,7 @@ class FastSim:
                     cofood_age=self.cofood_age, cofood_stats=self.cofood_stats,
                     rng_state=self.rng.bit_generator.state, engine="fast-v1",
                     patch_xy=getattr(self, "patch_xy", None), patch_dir=getattr(self, "patch_dir", None),
-                    regrow_map=getattr(self, "regrow_map", None), wall=self.wall)
+                    regrow_map=getattr(self, "regrow_map", None), wall=self.wall, shelter=self.shelter)
         data.update(self._checkpoint_extra())
         path = os.path.join(self.out_dir, f"checkpoint_{self.tick}.pkl")
         with open(path + ".tmp", "wb") as f:  # write, then rename: a killed run never leaves a half-written save
@@ -791,6 +811,8 @@ class FastSim:
             if d.get(k) is not None:
                 setattr(sim, k, d[k])
         sim.wall = d["wall"] if d.get("wall") is not None else np.zeros_like(sim.food)
+        sim.shelter = d["shelter"] if d.get("shelter") is not None else np.zeros_like(sim.food)
+        sim._has_shelter = bool(sim.shelter.any())
         n = len(d["x"])
         sim._alloc(max(256, int(n * 1.5)))
         for k in cls._FIELDS:

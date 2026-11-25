@@ -987,3 +987,14 @@ Speed (laptop Linux VM, 2 cores; same saved arms-race world): old 305 ticks/s ->
 Cloud, same saves: arms ON world 437 -> 729 ticks/s (1.67x), arms OFF 236 -> 336 (1.42x); terrain 1 -> 2 threads 275 -> 386 (1.40x).
 All existing modes (stage13, sparse2_memory, sparse2_language, terrain_language, arms_race) reproduce the old engine bit for bit;
 old saves resume correctly. `fast/bench_speedup.py` measures 1..all threads on the laptop.
+
+## Arms race round 2: set-up (25 Nov 2026)
+
+Modes `arms2_shelter` (catch 0.2) and `arms2_shelter_c30` (catch 0.3), 10 seeds x 2 arms x 1M ticks. Predators evolve in both arms.
+- **Newcomer rule fixed** (`pred_immigrants="bank"`): when predators fall below 10, newcomers are exact copies of the 30 most
+  recently dead predators, not random brains, so crashes no longer reset predator evolution.
+- **Shelters** (ON arm, `shelter_frac=0.03`): 3% of cells, drawn from their own random stream; predators cannot catch prey standing
+  in one; no food grows there (hiding costs eating); prey sense them in inputs 100-124 (the unused kin slot). OFF arm: none.
+- Calibration (seed 1, 22k ticks, both catch rates): both species coexist with boom-and-bust cycles; lowest prey count 91
+  (shelters, catch 0.3), recovered. Laptop and cloud give the same population at tick 6,000 (863); resume works.
+- Worlds without shelters still reproduce the old engine bit for bit.
