@@ -1081,3 +1081,31 @@ wired (stay zero), so OFF shows what drift and cost alone do to brain size; ON a
 Calibration, seed 1, ~45k ticks: several-ways world ON 24 -> ~30 units (population all diggers by then), OFF 24 -> ~21.5;
 arms world ON 21-25 (no growth). Resume byte-identical. Analysis: `fast/analyze_brains.py <folder> [--tests]` (sizes per arm and gut
 group; lesion: switch off units beyond 24 in big-brained creatures).
+
+## Several ways to live: 1,000,000 ticks (25 Nov 2026)
+
+The 7 surviving ON worlds and 10 OFF worlds from the 100k screen, extended to 1M (`analyze_ways.py`).
+- **The split lasts.** All 3 split worlds are still split at 1M: surface specialists 52%/54%/53%, diggers 48%/46%/47% (seeds 1, 2, 5),
+  with ~3,960 creatures vs ~2,300 in the control. Along the way the shares swung back and forth around 50/50 (e.g. seed 1: 64% diggers
+  at 245k, 49% at 280k, 61% at 310k, 48% at 1M), the signature of negative frequency dependence: whichever group is rarer does better.
+- **No new splits and no collapses of a split:** the 4 all-digger worlds stay ~100% diggers (~1,880 creatures); OFF stays 100% surface.
+- **Specialisation sharpens** (1M saves, 300 ticks): digs per action, surface specialists vs diggers, 0.007 vs 0.480 / 0.007 vs 0.487 /
+  0.002 vs 0.502 (at 100k: 0.023-0.039 vs ~0.467). Removing what digging yields: diggers 1.18/1.29/1.29 -> 0.09/0.02/0.05,
+  surface specialists 0.85/0.96/1.16 -> 0.83/0.83/1.00. Blind to buried food: diggers unchanged (fixed soil).
+Verdict: two coexisting specialist groups, stable for a million ticks, each dependent on its own food.
+
+## Arms race round 2b: 1,000,000 ticks (25 Nov 2026)
+
+Mode `arms2b_shelter` (slow newcomers, 2 energy per catch), 10 seeds x 2 arms, 1M ticks.
+- **Survival: without shelters 10/10; with shelters 4/10** (died at 21k, 235k, 484k, 556k, 806k, 841k). One-sided Fisher exact p ~0.005.
+  Even no-shelter worlds came close: lowest prey count over the run 9-74.
+- **Why** (`why_shelters.py`, ticks 50k-200k): prey do not use the shelters: the share of prey inside one matches the share of cells
+  that are shelters (x0.5-1.5, at 1M: 0.019-0.030 vs 0.030). Shelter worlds simply run with fewer prey (702 vs 774; lowest 153 vs 192) and
+  fewer predators (64 vs 94), with more uneaten food (1,212 vs 1,072). Collapses are sudden: e.g. 1,244 prey -> 2 in ~900 ticks (seed 5),
+  1,418 -> 8 (seed 6). Likely: shelter cells grow no food, and the new shelter inputs feed noise into brains that evolved without them.
+- **Red Queen** (50k vs 1M, 4 survivors per arm): late predators beat early ones in 8/8 runs (+0.64 kills per predator per 100 ticks
+  with shelters, +1.02 without; round 1: +0.54). Prey vs the same predators: better on 2/4 in each arm. Prey blind to predators:
+  more kills on 3/4 (no shelters) and 2/4 (shelters); blind to shelters: more kills on 3/4 (small, +0.05 to +0.24).
+Verdict: with the fixed newcomer rule predators keep improving even faster; prey still don't keep up. **Shelters that prey never learn to
+use do not protect them: they cost enough to tip boom-and-bust worlds into collapse (6/10 vs 0/10).** Classic ecology says refuges
+stabilise predator-prey systems; here a refuge only helps if evolution discovers how to use it, and it didn't.

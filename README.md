@@ -51,8 +51,9 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 |:-:|---|---|
 | ✅ | **Social sensing** | Real and used. Switching it off cuts eating on **10/10** seeds. |
 | ✅ | **Poison avoidance** | Real. Creatures learn to steer around hazards. |
-| ✅ | **Several ways to live** | With buried food reachable only by digging and a heritable digestion trade-off, digging evolved in **7/7** surviving worlds, and in **3/7** the population split into two coexisting groups (surface eaters and diggers) with matching behaviour, each dependent on its own food in lesion tests. Control: 0/10. |
+| ✅ | **Several ways to live** | With buried food reachable only by digging and a heritable digestion trade-off, digging evolved in **7/7** surviving worlds, and in **3/7** the population split into two coexisting groups (surface eaters and diggers) that **lasted a million ticks** (~53/47, swinging back whenever one group grew too common), with matching behaviour and each dependent on its own food in lesion tests. Control: 0/10. |
 | ✅ | **Evolving predators** | A one-sided arms race. Predators keep getting better at hunting for a million ticks (**+46%**, 9/10 seeds; frozen predators: no gain). Prey evolve a real defence, reacting to predators they can sense (blinding them raises kills on 9/10 seeds), but still lose ground. |
+| ❌ | Shelters (placed) | Prey never learned to use them, and they made collapse **more** likely: 6/10 shelter worlds died out vs 0/10 without (p ≈ 0.005). A refuge only helps if evolution discovers it. |
 | ❌ | Two-symbol language | Not used, even in walled terrain. A 5-seed "hint" vanished at 10 seeds and at 1,000,000 ticks. |
 | ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
@@ -73,8 +74,8 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] **Sparse world:** drifting, vanishing food clusters and walled terrain
 - [x] **Long runs:** 1,000,000 ticks with a novelty meter and family trees
 - [ ] **Worlds that push for novelty**
-  - [x] ⚔️ An arms race: predators that evolve too *(first round done: one-sided race; next, give prey more ways to escape)*
-  - [x] 🍄 Several ways to live: food types that need different skills *(first round: two-niche split on 3/7 worlds)*
+  - [x] ⚔️ An arms race: predators that evolve too *(rounds 1 and 2b done: predators keep improving, prey don't keep up; placed shelters backfire)*
+  - [x] 🍄 Several ways to live: food types that need different skills *(two-niche split on 3/7 worlds, stable to 1M ticks)*
   - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
 - [ ] Bigger brains, only where they're needed
 - [ ] Large many-seed sweeps
