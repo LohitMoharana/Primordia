@@ -16,3 +16,4 @@ __pycache__/
 .idea/
 .vscode/
 _to_delete/
+fast/queue/
