@@ -40,6 +40,7 @@ def add_args(ap):
     ap.add_argument("--every", type=int, default=500)
     ap.add_argument("--pop-cap", type=int, default=12000)
     ap.add_argument("--min-pop", type=int, default=200, help="below this a world counts as collapsed (2 x 100 drawn)")
+    ap.add_argument("--burn-in", type=int, default=3000, help="settling ticks: only extinction counts, no pictures")
     ap.add_argument("--sigma0", type=float, default=0.2)
     ap.add_argument("--full-cma", action="store_true", help="full CMA-ES instead of ASAL's Sep-CMA-ES")
     ap.add_argument("--seed", type=int, default=0, help="search seed (world seeds are drawn from it)")
@@ -69,7 +70,7 @@ def run_search(a, out, clip, pool, objective="open", prompts=None, x0=None, log=
         opts = dict(bounds=[0, 1], popsize=a.popsize, seed=a.seed + 1, verbose=-9)
         if not a.full_cma:
             opts["CMA_diagonal"] = True  # Sep-CMA-ES, as in ASAL
-        es = cma.CMAEvolutionStrategy(np.full(AW.D, 0.5) if x0 is None else np.asarray(x0, float), a.sigma0, opts)
+        es = cma.CMAEvolutionStrategy(AW.default_start() if x0 is None else np.asarray(x0, float), a.sigma0, opts)
         gen, best = 0, None
         rng = np.random.default_rng(a.seed)
     ev_path = os.path.join(out, "evals.csv")
@@ -84,7 +85,8 @@ def run_search(a, out, clip, pool, objective="open", prompts=None, x0=None, log=
         t0 = time.time()
         U = es.ask()
         seeds = [int(s) for s in rng.integers(1, 10 ** 6, a.bs)]  # same seeds for the whole generation
-        losses, infos, firsts = AC.evaluate(pool, clip, U, seeds, a.ticks, a.every, a.pop_cap, a.min_pop, **score_kw)
+        losses, infos, firsts = AC.evaluate(pool, clip, U, seeds, a.ticks, a.every, a.pop_cap, a.min_pop,
+                                               getattr(a, "burn_in", 3000), **score_kw)
         rows = []
         for i, (u, l, inf) in enumerate(zip(U, losses, infos)):
             rows.append([gen, i, " ".join(map(str, seeds)), round(l, 5)] + [round(inf[k], 5) for k in part_keys] +
@@ -121,10 +123,10 @@ def selftest(a):
     clip = AC.Clip(a.clip_weights, a.device)
     print(f"CLIP loaded on {clip.device} in {time.time() - t:.0f} s")
     AW.worker_init()
-    r = AW.rollout(dict(kw=AW.decode(np.full(AW.D, 0.5)), seed=1, ticks=3000, every=500))
+    r = AW.rollout(dict(kw=AW.decode(AW.default_start()), seed=1, ticks=6000, every=500))
     z = AC.embed_run(clip, r)
     l, p = AC.score(z)
-    print(f"world ran 3000 ticks in {r['secs']:.0f} s ({r['status']}), {r['pops'][-1]} creatures; "
+    print(f"world ran 6000 ticks in {r['secs']:.0f} s ({r['status']}), {r['pops'][-1]} creatures; "
           f"novelty {-l:.4f} (space {p['novelty_space']:.4f}, genes {p['novelty_genes']:.4f}); "
           f"ASAL's original score {p['asal_oe']:.3f}")
     zt = clip.texts(["coloured dots on a black background", "a photo of a cat"])

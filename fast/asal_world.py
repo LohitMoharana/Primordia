@@ -45,6 +45,18 @@ D = len(SPACE)
 NAMES = [s[0] for s in SPACE]
 
 
+def default_start():
+    """A world known to stay healthy (1000-2300 creatures in tests): no predators, no poison,
+    no seasons, some buried food, surface food a little below sparse world v2. Searches start
+    here (as ASAL starts from a substrate's default settings) and move outward."""
+    u = np.full(D, 0.5)
+    for k in ("n_pred", "hazard_frac", "season_amp", "shelter_frac"):
+        u[NAMES.index(k)] = 0.0
+    u[NAMES.index("richness")] = 0.8
+    u[NAMES.index("n_soil")] = 0.3
+    return u
+
+
 def raw_params(u):
     u = np.clip(np.asarray(u, float), 0.0, 1.0)
     out = {}
@@ -197,6 +209,8 @@ def rollout(job):
     picture, so population size cannot show as change. A vs B gives the noise floor: how
     different two pictures of the very same moment look. A world below min_pop creatures
     (default 200 = 2 x n_draw) counts as collapsed and freezes, like a dead one.
+    The first burn_in ticks (default 3000) are a settling period: only extinction ends the
+    run there, and pictures start after it ((ticks - burn_in) / every of them).
     Returns frames (full space view, for display), A/B pictures of both views, populations."""
     import time
     t0 = time.time()
@@ -209,7 +223,12 @@ def rollout(job):
     pics = {k: [] for k in ("full", "sA", "sB", "gA", "gB")}
     pops, preds = [], []
     status = "ok"
-    n_frames = ticks // every
+    # settling period: the 300 founders often dip below min_pop before a world settles, so
+    # for the first burn_in ticks only extinction ends a run, and nothing is pictured
+    burn_in = int(job.get("burn_in", 3000))
+    while sim.tick < burn_in and sim.population > 0:
+        sim.step()
+    n_frames = max(2, (ticks - burn_in) // every)
     while len(pops) < n_frames:
         for _ in range(every):
             sim.step()

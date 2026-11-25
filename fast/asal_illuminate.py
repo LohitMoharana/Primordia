@@ -45,7 +45,7 @@ def kill_least_novel(Z, n_kill, k):
 
 def rollout_batch(pool, clip, U, seeds, a):
     res = pool.map(AW.rollout, [dict(kw=AW.decode(u), seed=int(s), ticks=a.ticks, every=a.every,
-                                     pop_cap=a.pop_cap, min_pop=a.min_pop) for u, s in zip(U, seeds)], chunksize=1)
+                                     pop_cap=a.pop_cap, min_pop=a.min_pop, burn_in=a.burn_in) for u, s in zip(U, seeds)], chunksize=1)
     out = []
     for r in res:
         z = AC.embed_run(clip, r)
@@ -92,6 +92,7 @@ def main():
     ap.add_argument("--every", type=int, default=1000)
     ap.add_argument("--pop-cap", type=int, default=12000)
     ap.add_argument("--min-pop", type=int, default=200)
+    ap.add_argument("--burn-in", type=int, default=3000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--clip-weights", default=None)
     ap.add_argument("--device", default=None)

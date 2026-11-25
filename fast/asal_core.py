@@ -22,7 +22,8 @@ Added for a world of evolving creatures (not in either project):
   - every picture shows the same number of creatures (two samples of 100), so a growing
     or shrinking population cannot look like change (found in testing: without this,
     dying worlds won, because ever-thinner pictures look new);
-  - collapse (< 200 creatures) and explosion freeze a world (no new pictures), so they earn nothing.
+  - a 3000-tick settling period (only extinction counts, no pictures); after it,
+    collapse (< 200 creatures) and explosion freeze a world (no new pictures), so they earn nothing.
 """
 import os
 import sys
@@ -181,15 +182,15 @@ def save_gif(frames, path, ms=150):
 
 
 # ----------------------------------------------------------------------------- evaluating worlds
-def jobs_for(U, seeds, ticks, every, pop_cap, min_pop):
-    return [dict(kw=AW.decode(u), seed=int(s), ticks=ticks, every=every, pop_cap=pop_cap, min_pop=min_pop)
-            for u in U for s in seeds]
+def jobs_for(U, seeds, ticks, every, pop_cap, min_pop, burn_in=3000):
+    return [dict(kw=AW.decode(u), seed=int(s), ticks=ticks, every=every, pop_cap=pop_cap, min_pop=min_pop,
+                 burn_in=burn_in) for u in U for s in seeds]
 
 
-def evaluate(pool, clip, U, seeds, ticks, every, pop_cap=12000, min_pop=200, **score_kw):
+def evaluate(pool, clip, U, seeds, ticks, every, pop_cap=12000, min_pop=200, burn_in=3000, **score_kw):
     """Run every world u on every seed (in parallel), score each run, average over seeds (ASAL's bs).
     Returns losses [len(U)], per-world info, and the first seed's rollout + embeddings of each world."""
-    res = pool.map(AW.rollout, jobs_for(U, seeds, ticks, every, pop_cap, min_pop), chunksize=1)
+    res = pool.map(AW.rollout, jobs_for(U, seeds, ticks, every, pop_cap, min_pop, burn_in), chunksize=1)
     losses, infos, firsts = [], [], []
     nb = len(seeds)
     for i in range(len(U)):
