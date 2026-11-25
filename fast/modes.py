@@ -282,3 +282,20 @@ MODES.update({
     "memseq_nomem": dict(name="93_memseq_nomem", prefix="memseq", ticks=200000, founders="stage5",
                          kw=lambda on: dict(MEMSEQ, memory=False, dig_partial=0.25 if on else 0.0)),
 })
+
+# ---------------------------------------------------------------------------
+# OPEN BRAINS (Soros & Stanley 2014, condition 4: the potential complexity of the phenotype
+# should not be limited by its representation). Their world Chromaria stagnated when one of
+# the four conditions was removed; this is the same controlled test in Primordia. World: several
+# ways to live + evolving predators (WAYS_PRED), gifts break even, working memory on (starting
+# unwired). ON: brains grow without a fixed size (brain_open; arrays widened on demand, safety
+# ceiling 128 units). OFF: brain size changes and costs exactly the same, but units beyond the
+# founders' 24 are never wired in (brain_wired=False), so the representation stays capped.
+# Measured with MODES (oee_modes.py, modes_compare.py).
+OPEN = dict(WAYS_PRED, share_multiplier=1.0, memory=True, zero_memory_weights=True,
+            brain_evolve=True, brain_open=True, nact_mut_p=0.1)  # size changes in 10% of births
+
+MODES.update({
+    "open_brains": dict(name="95_open_brains", prefix="brain", ticks=100000, founders="stage5",
+                        kw=lambda on: dict(OPEN, brain_wired=on)),
+})

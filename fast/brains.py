@@ -14,6 +14,12 @@ kernel skips them (no time spent on them either).
                below it saves the same, so a bigger brain only spreads if it pays for
                itself (and the founders' own brain costs nothing extra).
 
+OPEN BRAINS (brain_open=True; Soros & Stanley 2014, condition 4: "the potential complexity of
+the phenotype should not be limited by its representation"): there is no fixed brain_max.
+The weight arrays start with room for nact_init + 8 units and are widened (new units all-zero)
+whenever a child needs more, up to a safety ceiling (brain_ceiling, default 128 = 5x the
+founders' brain; reaching it is logged in brains.csv as max_units).
+
 Controls: brain_evolve=False keeps nact at nact_init. brain_wired=False lets nact change
 exactly the same way and costs the same, but units beyond nact_init are never wired in (they
 stay all-zero), so a bigger brain is pure cost: brain growth there is drift, not need.
@@ -48,7 +54,9 @@ class BrainMixin:
     _FIELDS_EXTRA = ["nact"]
 
     def __init__(self, *args, brain_evolve=True, brain_wired=True, brain_max=48, nact_init=24, nact_min=4,
-                 nact_mut_p=0.05, unit_cost=0.0002, **kw):
+                 nact_mut_p=0.05, unit_cost=0.0002, brain_open=False, brain_ceiling=128, **kw):
+        if brain_open:
+            brain_max = int(nact_init) + 8  # starting room only; widened on demand
         H = int(brain_max)
         f = kw.get("founders")
         if f is not None:  # pad the founders' brains with unused (all-zero) units
@@ -65,6 +73,8 @@ class BrainMixin:
         self.rng_brain = np.random.default_rng([seed, 9191])
         self.cfg.update(brain_evolve=bool(brain_evolve), brain_wired=bool(brain_wired), brain_max=H, nact_init=int(nact_init), nact_min=int(nact_min),
                         nact_mut_p=float(nact_mut_p), unit_cost=float(unit_cost))
+        if brain_open:
+            self.cfg.update(brain_open=True, brain_ceiling=int(brain_ceiling))
         idx = np.flatnonzero(self.alive)
         self.nact[idx] = int(nact_init)
         self._zero_units(idx, self.nact[idx])
@@ -86,6 +96,23 @@ class BrainMixin:
         self.ws[s] = self.ws[s] * ~m[:, :, None]
         self.hstate[s] = self.hstate[s] * ~m
 
+    def _widen(self, newH):
+        """Give every creature room for newH hidden units (the new units are all-zero: unused)."""
+        H = self.H
+        if newH <= H:
+            return
+        d = newH - H
+        def pad(a, axes):
+            p = [(0, 0)] * a.ndim
+            for ax in axes:
+                p[ax] = (0, d)
+            return np.pad(a, p)
+        self.w1 = pad(self.w1, [2]); self.b1 = pad(self.b1, [1]); self.w2 = pad(self.w2, [1])
+        self.wh = pad(self.wh, [1, 2]); self.hstate = pad(self.hstate, [1]); self.ws = pad(self.ws, [1])
+        self.H = newH
+        self.cfg["hidden"] = newH
+        self.cfg["brain_max"] = newH
+
     def _nact_args(self):
         return self.nact, True
 
@@ -97,7 +124,10 @@ class BrainMixin:
             u = self.rng_brain.random(len(par))
             p = c["nact_mut_p"]
             delta = np.where(u < p / 2, 1, np.where(u < p, -1, 0))
-            child = np.clip(na + delta, c["nact_min"], c["brain_max"])
+            top = c["brain_ceiling"] if c.get("brain_open") else c["brain_max"]
+            child = np.clip(na + delta, c["nact_min"], top)
+            if c.get("brain_open") and len(child) and child.max() > self.H:
+                self._widen(min(c["brain_ceiling"], int(child.max()) + 8))
         else:
             child = na.copy()
         self.nact[s] = child

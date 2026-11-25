@@ -88,7 +88,9 @@ class ModesTracker:
         self.snapshots = []       # list of (time, {id: skeleton bytes})
         self.prev_coal = {}
         self.seen = set()
-        self.rows = []            # (time, change, novelty, diversity, complexity)
+        self.rows = []            # (time, change, novelty, diversity, complexity, filter on)
+        self.brain_rows = []      # (time, mean units, max units, mean units of persistent roots)
+        self.units = {}           # creature id -> brain units (worlds with evolving brain size)
 
     def attach(self, sim):
         idx = np.flatnonzero(sim.alive)
@@ -110,6 +112,11 @@ class ModesTracker:
         idx = np.flatnonzero(sim.alive)
         sk = skeletons(sim, idx, self.probes) if len(idx) else np.zeros((0, len(self.probes)), np.int8)
         self.snapshots.append((sim.tick, {int(a): s.tobytes() for a, s in zip(sim.aid[idx], sk)}))
+        if hasattr(sim, "nact"):
+            # remember brain sizes only for creatures in kept snapshots (bounded memory)
+            keep = set().union(*[set(d) for _, d in self.snapshots])
+            self.units = {a: u for a, u in self.units.items() if a in keep}
+            self.units.update({int(a): int(u) for a, u in zip(sim.aid[idx], sim.nact[idx])})
         if len(self.snapshots) > self.interval // self.resolution + 1:
             self.snapshots.pop(0)
         self._calc(sim, set(int(a) for a in sim.aid[idx]))
@@ -132,9 +139,11 @@ class ModesTracker:
     def _calc(self, sim, alive_now):
         coal = {}
         active = len(self.snapshots) > self.interval // self.resolution
+        self._last_roots = []
         if active:
             t0, then = self.snapshots[0]
-            for a in self._canopy_roots(then, alive_now):
+            self._last_roots = list(self._canopy_roots(then, alive_now))
+            for a in self._last_roots:
                 coal[then[a]] = coal.get(then[a], 0) + 1
         change = novelty = 0
         most = 0
@@ -147,16 +156,27 @@ class ModesTracker:
                 self.seen.add(s)
             most = max(most, complexity(np.frombuffer(s, np.int8)))
         self.rows.append((sim.tick, change, novelty, div, most, active))
+        if hasattr(sim, "nact"):  # brain sizes: everyone alive, and the persistent lineages' roots
+            idx = np.flatnonzero(sim.alive)
+            na = sim.nact[idx]
+            roots_units = [self.units[a] for a in getattr(self, "_last_roots", []) if a in self.units]
+            self.brain_rows.append((sim.tick, float(na.mean()) if len(na) else 0.0, int(na.max()) if len(na) else 0,
+                                    float(np.mean(roots_units)) if roots_units else 0.0))
         self.prev_coal = coal
 
     def summary(self):
         """Per-run numbers over the snapshots where the filter is active."""
         r = [x for x in self.rows if x[5]][1:]  # the first filtered snapshot counts everything as change/new
         if not r:
-            return dict(change=0.0, novelty=0.0, diversity=0.0, complexity=0.0, snapshots=0)
+            return dict(change=0.0, novelty=0.0, diversity=0.0, complexity=0.0, snapshots=0,
+                        units_mean=0.0, units_max=0, units_persistent=0.0)
         a = np.array([x[1:5] for x in r], float)
-        return dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
-                    diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))
+        out = dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
+                   diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))
+        if self.brain_rows:
+            b = self.brain_rows[-1]
+            out.update(units_mean=b[1], units_max=b[2], units_persistent=b[3])
+        return out
 
 
 # ----------------------------------------------------------------------------- probe situations

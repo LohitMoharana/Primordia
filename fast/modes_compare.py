@@ -5,6 +5,7 @@ Each world runs on fresh seeds; MODES change / novelty / diversity / complexity 
 every 500 ticks with a 5000-tick persistence filter. Worlds:
 
     start                 the healthy default world (asal_world.default_start)
+    mode:<name>:<on|off>  a world from modes.py (e.g. mode:open_brains:on), stage-5 founders
     best:<dir>            the best world of an ASAL search (reads <dir>/best.txt)
     u:[0.1, 0.5, ...]     any point of the search space
 
@@ -29,7 +30,34 @@ import numpy as np
 import asal_world as AW
 import oee_modes as M
 
-METRICS = ["change", "novelty", "diversity", "complexity"]
+METRICS = ["change", "novelty", "diversity", "complexity",
+           "units_mean", "units_max", "units_persistent"]  # brain units: worlds with evolving brain size only
+
+
+def make_world(spec, seed):
+    """The simulation for a world spec (same class choice as run_fast.py for modes)."""
+    if spec.startswith("mode:"):
+        _, name, arm = spec.split(":")
+        from modes import MODES
+        kw = MODES[name]["kw"](arm == "on")
+        F = AW._founders(seed)
+        if "brain_evolve" in kw:
+            from brains import PredBrainSim, WaysBrainSim
+            cls = WaysBrainSim if "buried" in kw else PredBrainSim
+        elif "buried" in kw:
+            from ways import WaysSim as cls
+        elif "predators" in kw:
+            from predators import PredSim as cls
+        else:
+            from engine import FastSim as cls
+        return cls(seed=seed, founders=F, **kw)
+    return AW.make_sim(AW.decode(world_u(spec)), seed)
+
+
+def describe(spec):
+    if spec.startswith("mode:"):
+        return spec
+    return AW.describe(world_u(spec))
 
 
 def world_u(spec):
@@ -46,7 +74,7 @@ def world_u(spec):
 def run_one(job):
     AW.worker_init()
     t0 = time.time()
-    sim = AW.make_sim(AW.decode(np.array(job["u"])), job["seed"])
+    sim = make_world(job["world"], job["seed"])
     T = M.ModesTracker(M.load_probes(), job["resolution"], job["interval"])
     T.attach(sim)
     status = "ok"
@@ -99,28 +127,28 @@ def main():
             csv.writer(f).writerow(["world", "seed", "tick", "change", "novelty", "diversity", "complexity", "filter_on"])
     jobs = []
     for w in a.worlds:
-        u = world_u(w)
         for s in range(a.first_seed, a.first_seed + a.seeds):
             if (w, s) not in done:
-                jobs.append(dict(world=w, u=[float(v) for v in u], seed=s, ticks=a.ticks, resolution=a.resolution,
+                jobs.append(dict(world=w, seed=s, ticks=a.ticks, resolution=a.resolution,
                                  interval=a.interval, pop_cap=a.pop_cap))
     print(f"{len(jobs)} runs to do ({len(done)} already done); {a.jobs} at a time", flush=True)
     for w in a.worlds:
-        print(f"  {w}: {AW.describe(world_u(w))}")
+        print(f"  {w}: {describe(w)}")
     os.environ.setdefault("NUMBA_NUM_THREADS", "1")
     import multiprocessing as mp
     with mp.get_context("spawn").Pool(a.jobs, initializer=AW.worker_init) as pool:
         for r in pool.imap_unordered(run_one, jobs):
             with open(runs_path, "a", newline="") as f:
                 csv.writer(f).writerow([r["world"], r["seed"], r["status"], r["final_pop"], r["secs"], r["snapshots"]] +
-                                       [round(r[m], 4) for m in METRICS] + [AW.describe(world_u(r["world"]))])
+                                       [round(float(r.get(m, 0)), 4) for m in METRICS] + [describe(r["world"])])
             with open(tl_path, "a", newline="") as f:
                 csv.writer(f).writerows([[r["world"], r["seed"], x[0], x[1], x[2], round(x[3], 4), x[4], int(x[5])]
                                          for x in r["rows"]])
             print(f"{r['world']} seed {r['seed']}: {r['status']}, {r['final_pop']} creatures, "
-                  + ", ".join(f"{m} {r[m]:.2f}" for m in METRICS) + f"  ({r['secs']} s)", flush=True)
+                  + ", ".join(f"{m} {float(r.get(m, 0)):.2f}" for m in METRICS) + f"  ({r['secs']} s)", flush=True)
     rows = list(csv.DictReader(open(runs_path)))
     print("\nworld                 runs  survived   " + "   ".join(f"{m:>16s}" for m in METRICS))
+    print("(units_*: hidden units in use at the end - everyone, max, and roots of persistent lineages)")
     by = {}
     for w in a.worlds:
         rs = [r for r in rows if r["world"] == w]
