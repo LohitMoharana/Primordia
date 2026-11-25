@@ -193,3 +193,18 @@ MODES.update({
     "build": dict(name="70_build", prefix="build", ticks=300000, founders="stage5",
                   kw=lambda on: _build(build=on)),
 })
+
+# ---------------------------------------------------------------------------
+# BIGGER BRAINS WHEN NEEDED (brains.py): brain size is heritable. Room for 48 hidden
+# units; founders use 24 (their evolved brains, padded with unused zero units); a child
+# gains or loses one unit with probability 0.05; each unit above 24 costs 0.0002 energy
+# per tick (each unit below 24 saves the same). Brain size evolves in both arms. ON: extra
+# units can be wired in by mutation. OFF: extra units stay unwired (pure cost), so brain
+# growth there is drift; growth beyond it means bigger brains are needed.
+# brain_ways: in the several-ways-to-live world; brain_arms: in the arms race 2b world.
+MODES.update({
+    "brain_ways": dict(name="80_brain_ways", prefix="brain", ticks=300000, founders="stage5",
+                       kw=lambda on: dict(WAYS, brain_evolve=True, brain_wired=on)),
+    "brain_arms": dict(name="81_brain_arms", prefix="brain", ticks=300000, founders="stage5",
+                       kw=lambda on: dict(ARMS2B, brain_evolve=True, brain_wired=on)),
+})

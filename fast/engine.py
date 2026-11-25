@@ -595,7 +595,7 @@ class FastSim:
                     bool(self.cfg.get("memory", False)), self.wh, self.hstate,
                     sig2, self.ws, self.bs, r.random(n), SIG0, N_SYMBOLS, sym2,
                     sg, bool(sg.any()), self.shelter, bool(self._has_shelter),
-                    *self._mark_slot_args())
+                    *self._mark_slot_args(), *self._nact_args())
         self.last_sym2[idx] = sym2
         self._count_actions(act)
         keys = r.random(n)
@@ -649,6 +649,12 @@ class FastSim:
         if getattr(self, "_zero_grid", None) is None:
             self._zero_grid = np.zeros((self.size, self.size))
         return self._zero_grid, False
+
+    _NO_NACT = np.zeros(1, np.int64)
+
+    def _nact_args(self):
+        """Per-agent number of hidden units in use (brains.py), and whether to apply it."""
+        return self._NO_NACT, False
 
     def _eat_eff(self, idx):
         """Energy per unit of surface food eaten, per agent in idx (None / ones = 1)."""

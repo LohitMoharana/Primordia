@@ -23,7 +23,7 @@ if HAVE_NUMBA:
     def sense_think(idx, xs, ys, energy, age, food, occ, sig, haz, cof,
                     social, w1, b1, w2, b2, u, max_energy, max_age, out_act,
                     memory, wh, hstate, sig2, ws, bs, u2, sig0, nsym, out_sym2, wall, has_wall,
-                    kin, has_kin, mark, has_mark):
+                    kin, has_kin, mark, has_mark, nact, has_nact):
         S = food.shape[0]
         n = idx.shape[0]
         H = b1.shape[1]
@@ -40,11 +40,14 @@ if HAVE_NUMBA:
                 rare[p, q] = sig[p, q] != 0.0 or haz[p, q] != 0.0 or cof[p, q] > 0.0 or sig2[p, q] != 0.0
         for k in prange(n):
             a = idx[k]
+            # evolvable brain size (brains.py): only the first nact[a] hidden units are in
+            # use; the rest have all-zero weights, so skipping them changes nothing
+            na = nact[a] if has_nact else H
             x = xs[k]
             y = ys[k]
             h = h_all[k]
             b1r = b1[a]
-            for j in range(H):
+            for j in range(na):
                 h[j] = b1r[j]
             cxs = cx_all[k]
             cys = cy_all[k]
@@ -60,7 +63,7 @@ if HAVE_NUMBA:
                 v = np.float32(food[cxs[c], cys[c]])
                 if v != 0.0:
                     wr = w1[a, c]
-                    for j in range(H):
+                    for j in range(na):
                         h[j] += v * wr[j]
             if social:
                 for c in range(25):
@@ -72,7 +75,7 @@ if HAVE_NUMBA:
                     if v != 0.0:
                         vf = np.float32(v)
                         wr = w1[a, 25 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += vf * wr[j]
             # signals, poison and shared food are rare: one combined check per
             # cell, then the three channels only where something is there.
@@ -83,7 +86,7 @@ if HAVE_NUMBA:
                     if v != 0.0:
                         vf = np.float32(v)
                         wr = w1[a, 50 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += vf * wr[j]
             for c in range(25):
                 if rare[cxs[c], cys[c]]:
@@ -91,13 +94,13 @@ if HAVE_NUMBA:
                     if v != 0.0:
                         vf = np.float32(v)
                         wr = w1[a, 75 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += vf * wr[j]
             if has_wall:  # terrain: walls nearby (inputs 125-149, the unused predator slot)
                 for c in range(25):
                     if wall[cxs[c], cys[c]] != 0.0:
                         wr = w1[a, 125 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += wr[j]
             if has_mark:  # buried food nearby (inputs 150-174, the unused marker slot)
                 for c in range(25):
@@ -105,13 +108,13 @@ if HAVE_NUMBA:
                     if v != 0.0:
                         vf = np.float32(v)
                         wr = w1[a, 150 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += vf * wr[j]
             if has_kin:  # shelters nearby (inputs 100-124, the unused kin slot)
                 for c in range(25):
                     if kin[cxs[c], cys[c]] != 0.0:
                         wr = w1[a, 100 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += wr[j]
             for c in range(25):
                 if rare[cxs[c], cys[c]]:
@@ -119,31 +122,31 @@ if HAVE_NUMBA:
                     if v != 0.0:
                         vf = np.float32(v)
                         wr = w1[a, 175 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += vf * wr[j]
             for c in range(25):
                 if rare[cxs[c], cys[c]]:
                     if cof[cxs[c], cys[c]] > 0.0:
                         wr = w1[a, 200 + c]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += wr[j]
             if memory:
                 # working memory: last tick's hidden state feeds back through wh
                 hp = hstate[a]
-                for i in range(H):
+                for i in range(na):
                     hpi = hp[i]
                     if hpi != 0.0:
                         whr = wh[a, i]
-                        for j in range(H):
+                        for j in range(na):
                             h[j] += hpi * whr[j]
             e = np.float32(energy[k] / max_energy)
             g = np.float32(age[k] / max_age)
-            for j in range(H):
+            for j in range(na):
                 # tanh via exp (same value to ~1 ulp, several times cheaper here)
                 z = h[j] + e * w1[a, 225, j] + g * w1[a, 226, j]
                 h[j] = np.float32(1.0) - np.float32(2.0) / (np.exp(np.float32(2.0) * z) + np.float32(1.0))
             if memory:
-                for j in range(H):
+                for j in range(na):
                     hstate[a, j] = h[j]
             # output layer + softmax sampling
             out = out_all[k]
@@ -152,7 +155,7 @@ if HAVE_NUMBA:
                 acc[o] = b2[a, o]
             # j outer, o inner: 14 independent running sums (each still adds
             # its terms in j order, so the result is bit-identical)
-            for j in range(H):
+            for j in range(na):
                 hj = h[j]
                 w2r = w2[a, j]
                 for o in range(O):
@@ -184,7 +187,7 @@ if HAVE_NUMBA:
                 lg = np.empty(Q, np.float64)
                 for q in range(Q):
                     s2 = np.float32(bs[a, q])
-                    for j in range(H):
+                    for j in range(na):
                         s2 += h[j] * ws[a, j, q]
                     lg[q] = s2
                     if s2 > mq:

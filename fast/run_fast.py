@@ -63,7 +63,7 @@ if ck:
     # drop log lines written after this checkpoint (the run was stopped before its next save),
     # so resuming does not duplicate ticks in log.csv / novelty.csv / births.csv / cofood.csv
     for name, col in (("log.csv", 0), ("novelty.csv", 0), ("births.csv", 0), ("cofood.csv", 0), ("predators.csv", 0),
-                      ("ways.csv", 0), ("storage.csv", 0), ("building.csv", 0)):
+                      ("ways.csv", 0), ("storage.csv", 0), ("building.csv", 0), ("brains.csv", 0)):
         f = os.path.join(a.out_dir, name)
         if os.path.exists(f):
             lines = open(f).read().splitlines()
@@ -74,8 +74,12 @@ if ck:
         _d = pickle.load(_f)
     _has_pred, _has_ways, _has_store = "pred" in _d, "buried" in _d, "store" in _d
     _has_build = "build_marker" in _d
+    _has_brain = "brain_marker" in _d
     del _d
-    if _has_build:
+    if _has_brain:
+        from brains import WaysBrainSim, PredBrainSim
+        sim = (WaysBrainSim if _has_ways else PredBrainSim).from_checkpoint(path, out_dir=a.out_dir)
+    elif _has_build:
         from building import BuildSim
         sim = BuildSim.from_checkpoint(path, out_dir=a.out_dir)
     elif _has_store:
@@ -108,6 +112,9 @@ else:
     if a.engine == "torch":
         from engine_torch import TorchSim
         sim = TorchSim(seed=a.seed, out_dir=a.out_dir, founders=F, device=a.device, **kw)
+    elif "brain_evolve" in kw:
+        from brains import WaysBrainSim, PredBrainSim
+        sim = (WaysBrainSim if "buried" in kw else PredBrainSim)(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)
     elif "build" in kw:
         from building import BuildSim
         sim = BuildSim(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)

@@ -1067,3 +1067,17 @@ built, crumbled and prey inside. Calibration (seeds 1-2, 45k ticks): with 1.0 en
 covered ~15% of the world and starved prey; with 1.5 and 1/1000: 3-8% of cells, prey 800-1,600. Resume byte-identical.
 Analysis for arms 2b and building: `fast/analyze_arms2.py <folder> [--tests]` (survival, prey in shelters vs shelter cells,
 Red Queen 2x2, prey blind to predators / to shelters).
+
+## Bigger brains when needed: set-up (25 Nov 2026)
+
+`fast/brains.py`, modes `brain_ways` (several-ways-to-live world) and `brain_arms` (arms race 2b world), 300k ticks.
+Brain size is heritable: room for 48 hidden units, founders use 24 (their evolved brains padded with all-zero units); a child gains or
+loses one unit with probability 0.05 (range 4-48); a grown unit starts disconnected (all-zero weights) and is wired only by later
+mutation. Each unit above 24 costs 0.0002 energy per tick and each unit below 24 saves the same (charging for all 24 units killed the
+founders in calibration: both arms died by ~10k ticks). Unused units have exactly zero weights, contribute exactly nothing, and the
+compiled kernel now skips them (per-agent loop over units in use; all existing modes still reproduce the old engine bit for bit,
+checked on 9 modes). **Control (OFF):** brain size changes in exactly the same way and costs the same, but units beyond 24 are never
+wired (stay zero), so OFF shows what drift and cost alone do to brain size; ON above OFF means bigger brains are needed.
+Calibration, seed 1, ~45k ticks: several-ways world ON 24 -> ~30 units (population all diggers by then), OFF 24 -> ~21.5;
+arms world ON 21-25 (no growth). Resume byte-identical. Analysis: `fast/analyze_brains.py <folder> [--tests]` (sizes per arm and gut
+group; lesion: switch off units beyond 24 in big-brained creatures).
