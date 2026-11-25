@@ -252,3 +252,15 @@ MODES.update({
     "steps": dict(name="90_steps", prefix="steps", ticks=100000, founders="stage5",
                   kw=lambda on: dict(STEPS, dig_partial=0.25 if on else 0.0)),
 })
+
+# REPLICATION 1b, STEPPING STONES WITH DIFFERENT ACTIONS (our twist on Lenski et al. 2003):
+# buried food pays in full only after the sequence dig (mark), stay, take (mate), eat on one cell,
+# in that order - four different skills, closer to Avida's EQU than one action repeated.
+# ON: each correct step after the first pays 1/4 (the first alone pays nothing, else digging
+# forever wins). OFF: only the whole sequence pays.
+# Gifts break even here (share_multiplier 1.0; see engine.SHARE_MULTIPLIER).
+MODES.update({
+    "steps_mixed": dict(name="91_steps_mixed", prefix="steps", ticks=100000, founders="stage5",
+                        kw=lambda on: dict(STEPS, dig_steps=1, dig_sequence=("mark", "stay", "mate", "eat"),
+                                           dig_partial=0.25 if on else 0.0, share_multiplier=1.0)),
+})

@@ -40,7 +40,7 @@ class WaysSim(PredSim):
 
     def __init__(self, *args, buried=True, n_soil=6, soil_sigma=6.0, buried_regrow=0.02, buried_max=2.0,
                  gut_q=1.5, gut_mut=0.05, gut_init_max=1.0, buried_base=0.0, dig_steps=1, dig_partial=0.0,
-                 quiet_new_sense=False, buried_sense_scale=1.0, predators=False, **kw):
+                 quiet_new_sense=False, buried_sense_scale=1.0, dig_sequence=None, predators=False, **kw):
         if quiet_new_sense and kw.get("founders") is not None:
             # NEUTRAL INTRODUCTION: the founders evolved in a world without buried food, so their
             # weights for its input rows (150-174) are leftover drift that would feed noise into
@@ -57,7 +57,8 @@ class WaysSim(PredSim):
                         buried_regrow=float(buried_regrow), buried_max=float(buried_max),
                         gut_q=float(gut_q), gut_mut=float(gut_mut), gut_init_max=float(gut_init_max),
                         buried_base=float(buried_base), dig_steps=int(dig_steps), dig_partial=float(dig_partial),
-                        quiet_new_sense=bool(quiet_new_sense), buried_sense_scale=float(buried_sense_scale))
+                        quiet_new_sense=bool(quiet_new_sense), buried_sense_scale=float(buried_sense_scale),
+                        dig_sequence=list(dig_sequence) if dig_sequence else None)
         self._steps_stats = dict(completed=0, partial=0, dug_partial=0.0, dug_complete=0.0)
         S = self.size
         rw = self.rng_ways
@@ -112,6 +113,8 @@ class WaysSim(PredSim):
             return
         dig = np.flatnonzero(act == A["mark"])  # dig action (its energy cost was paid in the action phase)
         self._dig_counts += len(dig)
+        if c.get("dig_sequence"):
+            return self._action_sequence(idx, act, x0, y0, e, keys, dead)
         if c.get("dig_steps", 1) > 1:
             return self._dig_sequence(idx, act, x0, y0, e, keys, dead, dig)
         if not len(dig):
@@ -174,6 +177,54 @@ class WaysSim(PredSim):
         st["dug_partial"] += float(got[~complete].sum())
         dead[dig] = ((e[dig] <= 0) | (self.age[idx[dig]] >= MAX_AGE)).astype(dead.dtype)
 
+    def _action_sequence(self, idx, act, x0, y0, e, keys, dead):
+        """STEPPING STONES WITH DIFFERENT ACTIONS (cfg dig_sequence, e.g. mark, stay, mate, eat).
+        Buried food pays in full only to a creature that performs the whole sequence, in order,
+        on one cell holding buried food (none of the steps moves you). Each correct step after the
+        first pays dig_partial x DIG_GAIN (0 in the control); the first step alone pays nothing. A wrong action resets progress, except
+        that the first action of the sequence always starts a new attempt."""
+        c, S = self.cfg, self.size
+        seq = np.array([A[a] for a in c["dig_sequence"]])
+        K = len(seq)
+        st = self._steps_stats
+        prog = self.dig_streak  # progress = number of correct steps so far
+        cell = x0 * S + y0
+        has = self.buried.ravel()[cell] >= 0.05
+        p = prog[idx]
+        right = has & (act == seq[np.minimum(p, K - 1)])
+        restart = has & ~right & (act == seq[0])
+        p_new = np.where(right, p + 1, np.where(restart, 1, 0))
+        complete = p_new >= K
+        step = right | restart  # a correct step this tick
+        # only progress pays: the first step alone pays nothing (otherwise repeating the first
+        # action forever is the best strategy, as a first test showed); steps 2..K-1 pay
+        # dig_partial each, the whole sequence pays DIG_GAIN
+        paid = step & (p_new >= 2)
+        want = np.where(complete, DIG_GAIN, np.where(paid, c["dig_partial"] * DIG_GAIN, 0.0))
+        k = np.flatnonzero(want > 0)
+        got = np.zeros(len(idx))
+        if len(k):
+            ck = cell[k]
+            order = np.lexsort((keys[k], ck))
+            cs, ws = ck[order], want[k][order]
+            first = np.r_[True, cs[1:] != cs[:-1]]
+            grp = np.cumsum(first) - 1
+            cum = np.cumsum(ws)
+            before = cum - ws - (cum - ws)[np.flatnonzero(first)][grp]
+            gs = np.clip(self.buried.ravel()[cs] - before, 0.0, ws)
+            gk = np.empty(len(k))
+            gk[order] = gs
+            got[k] = gk
+            np.add.at(self.buried.ravel(), ck, -gk)
+            np.maximum(self.buried, 0.0, out=self.buried)
+            e[k] = np.minimum(e[k] + gk * self._dig_eff(idx[k]), MAX_ENERGY)
+            dead[k] = ((e[k] <= 0) | (self.age[idx[k]] >= MAX_AGE)).astype(dead.dtype)
+        prog[idx] = np.where(complete, 0, p_new)
+        st["completed"] += int(complete.sum())
+        st["partial"] += int((paid & ~complete).sum())
+        st["dug_complete"] += float(got[complete].sum())
+        st["dug_partial"] += float(got[paid & ~complete].sum())
+
     def _world_step(self, foods=None):
         super()._world_step(foods)
         c = self.cfg
@@ -205,7 +256,7 @@ class WaysSim(PredSim):
                         round(self._dig_counts / max(1, total), 4), round(float(self.buried.sum()), 1)]
                        + [round(float(h), 4) for h in hist])
         self._dig_counts = 0
-        if self.cfg.get("dig_steps", 1) > 1:
+        if self.cfg.get("dig_steps", 1) > 1 or self.cfg.get("dig_sequence"):
             st = self._steps_stats
             path = os.path.join(self.out_dir, "steps.csv")
             new = not os.path.exists(path)

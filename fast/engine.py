@@ -45,7 +45,10 @@ MARK_COST = 0.015
 HAZARD_DRAIN = 0.15
 SHARE_AMOUNT = 0.5
 SHARE_COST = 0.02
-SHARE_MULTIPLIER = 2.0
+SHARE_MULTIPLIER = 2.0  # receiver gets 2x what the giver pays (kin-sharing stage). This creates energy:
+# two creatures passing gifts back and forth gain energy from nothing (found by evolution in the
+# building world, 25 Nov). New experiments set cfg share_multiplier = 1.0 (gifts break even);
+# older modes keep 2.0 so they still reproduce.
 EAT_GAIN = 0.5
 REPRODUCE_COST = 4.0
 REPRODUCE_MIN_ENERGY = 6.0
@@ -79,7 +82,7 @@ class FastSim:
                  memory=False, language=False, food_mode="uniform", n_patches=16, patch_sigma=4.0,
                  patch_speed=0.03, patch_turn=0.05, patch_peak=0.057, founders_near_patches=False,
                  patch_life=0, zero_memory_weights=False, walls=False, wall_spacing=32, door_width=6,
-                 shelter_frac=0.0):
+                 shelter_frac=0.0, share_multiplier=None):
         # hidden / n_actions / init_inputs: brain shape of the stage being modelled
         # (earlier stages had fewer actions, fewer inputs, stage 1 had 16 hidden units).
         # Actions are always a prefix of ACTIONS, so a stage with 7 actions can
@@ -102,6 +105,8 @@ class FastSim:
                         wall_spacing=int(wall_spacing), door_width=int(door_width))
         if shelter_frac:
             self.cfg["shelter_frac"] = float(shelter_frac)
+        if share_multiplier is not None:  # absent = old rule (2.0), so older modes reproduce
+            self.cfg["share_multiplier"] = float(share_multiplier)
         self.checkpoint_every = checkpoint_every
         self.use_numba = HAVE_NUMBA
         self._complexity = (None, 0.0)
@@ -561,7 +566,7 @@ class FastSim:
         if gifts is not None:
             _, recv = gifts
             ok = self.alive[recv]
-            np.add.at(self.energy, recv[ok], SHARE_AMOUNT * SHARE_MULTIPLIER)
+            np.add.at(self.energy, recv[ok], SHARE_AMOUNT * self.cfg.get("share_multiplier", SHARE_MULTIPLIER))
             np.minimum(self.energy, MAX_ENERGY, out=self.energy)
         if self.cfg["cofood"] and len(eat):
             self._resolve_cofood(idx[eat], x0[eat], y0[eat])
@@ -619,7 +624,7 @@ class FastSim:
         if len(g):
             rc = idx[recv[g]]
             ok = self.alive[rc]
-            np.add.at(self.energy, rc[ok], SHARE_AMOUNT * SHARE_MULTIPLIER)
+            np.add.at(self.energy, rc[ok], SHARE_AMOUNT * self.cfg.get("share_multiplier", SHARE_MULTIPLIER))
             np.minimum(self.energy, MAX_ENERGY, out=self.energy)
         if self.cfg["cofood"]:
             eat = np.flatnonzero(act == A["eat"])
@@ -730,7 +735,7 @@ class FastSim:
         if len(g):
             rc = idx[recv[g]]
             ok = self.alive[rc]
-            np.add.at(self.energy, rc[ok], SHARE_AMOUNT * SHARE_MULTIPLIER)
+            np.add.at(self.energy, rc[ok], SHARE_AMOUNT * self.cfg.get("share_multiplier", SHARE_MULTIPLIER))
             np.minimum(self.energy, MAX_ENERGY, out=self.energy)
         if self.cfg["cofood"]:
             eat = np.flatnonzero(act == A["eat"])
