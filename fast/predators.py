@@ -29,6 +29,9 @@ import pickle
 import numpy as np
 
 from engine import FastSim, MUT_RATE, MUT_STRENGTH
+from kernels import HAVE_NUMBA
+if HAVE_NUMBA:
+    from kernels import pred_sense_think, pred_attacks
 
 P_ACTIONS = ["stay", "N", "S", "E", "W", "attack", "reproduce"]
 PA = {a: i for i, a in enumerate(P_ACTIONS)}
@@ -104,31 +107,22 @@ class PredSim(FastSim):
             n = c["n_pred"]
             self._add_pred(np.arange(n), r.integers(0, S, n), r.integers(0, S, n))
         P = self.pred
-        P = self.pred
         if self.n_pred < c["pred_floor"]:  # immigrants from the founder pool
             k = c["pred_floor"] - self.n_pred
             self._add_pred(r.integers(0, len(self.pred_pool["w1"]), k), r.integers(0, S, k), r.integers(0, S, k))
             self.pred_stats["immigrants"] += k
         n = self.n_pred
         idx = np.flatnonzero(self.alive)
-        prey_occ = np.zeros((S, S))
-        np.add.at(prey_occ, (self.x[idx], self.y[idx]), 1.0)
-        pred_occ = np.zeros((S, S))
-        np.add.at(pred_occ, (P["x"], P["y"]), 1.0)
-        ox, oy = self._ox, self._oy
-        cx, cy = (P["x"][:, None] + ox) % S, (P["y"][:, None] + oy) % S
-        X = np.zeros((n, P_IN), np.float32)
-        X[:, :25] = np.log1p(prey_occ[cx, cy])
-        po = pred_occ[cx, cy]
-        po[:, 12] -= 1.0
-        X[:, 25:50] = po > 0
-        X[:, 50] = P["e"] / c["pred_max_e"]
-        X[:, 51] = P["age"] / c["pred_max_age"]
-        h = np.tanh(np.einsum("ni,nih->nh", X, P["w1"]) + P["b1"])
-        out = np.einsum("nh,nho->no", h, P["w2"]) + P["b2"]
-        out = (out - out.max(1, keepdims=True)).astype(np.float64)
-        p = np.exp(out); p /= p.sum(1, keepdims=True)
-        act = np.minimum((np.cumsum(p, 1) < r.random(n)[:, None]).sum(1), P_OUT - 1)
+        prey_occ = np.bincount(self.x[idx] * S + self.y[idx], minlength=S * S).astype(np.float64).reshape(S, S)
+        pred_occ = np.bincount(P["x"] * S + P["y"], minlength=S * S).astype(np.float64).reshape(S, S)
+        u = r.random(n)
+        if self._use_pred_kernel():
+            act = np.empty(n, np.int64)
+            pred_sense_think(P["x"], P["y"], P["e"].astype(np.float64), P["age"].astype(np.float64),
+                             P["w1"], P["b1"], P["w2"], P["b2"], prey_occ, pred_occ, u,
+                             float(c["pred_max_e"]), float(c["pred_max_age"]), act)
+        else:
+            act = self._pred_brain_py(prey_occ, pred_occ, u)
         self._pred_act_counts += np.bincount(act, minlength=P_OUT)
         P["age"] += 1
         x0, y0 = P["x"].copy(), P["y"].copy()
@@ -146,22 +140,30 @@ class PredSim(FastSim):
             order = np.argsort(cell, kind="stable")
             cs = cell[order]
             ua, uc = r.random(len(att)), r.random(len(att))
-            for q in r.permutation(len(att)):
-                j = att[q]
-                self.pred_stats["attacks"] += 1
-                cands = []
-                for dx in (-1, 0, 1):
-                    for dy in (-1, 0, 1):
-                        cc = ((x0[j] + dx) % S) * S + (y0[j] + dy) % S
-                        lo, hi = np.searchsorted(cs, cc), np.searchsorted(cs, cc, side="right")
-                        for s_ in order[lo:hi]:
-                            if self.alive[idx[s_]]:
-                                cands.append(idx[s_])
-                if cands and ua[q] < c["catch_p"]:
-                    victim = cands[int(uc[q] * len(cands))]
-                    self.alive[victim] = False
-                    e[j] += c["kill_gain"]
-                    self.pred_stats["kills"] += 1
+            perm = r.permutation(len(att))
+            if self._use_pred_kernel():
+                st = np.zeros(2, np.int64)
+                pred_attacks(att, perm, x0, y0, idx, order, cs, self.alive, ua, uc, float(c["catch_p"]),
+                             float(c["kill_gain"]), e, S, st)
+                self.pred_stats["attacks"] += int(st[0])
+                self.pred_stats["kills"] += int(st[1])
+            else:
+                for q in perm:
+                    j = att[q]
+                    self.pred_stats["attacks"] += 1
+                    cands = []
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            cc = ((x0[j] + dx) % S) * S + (y0[j] + dy) % S
+                            lo, hi = np.searchsorted(cs, cc), np.searchsorted(cs, cc, side="right")
+                            for s_ in order[lo:hi]:
+                                if self.alive[idx[s_]]:
+                                    cands.append(idx[s_])
+                    if cands and ua[q] < c["catch_p"]:
+                        victim = cands[int(uc[q] * len(cands))]
+                        self.alive[victim] = False
+                        e[j] += c["kill_gain"]
+                        self.pred_stats["kills"] += 1
         np.minimum(e, c["pred_max_e"], out=e)
         # reproduction
         rep = np.flatnonzero((act == PA["reproduce"]) & (e >= c["pred_rep_min"]))
@@ -169,8 +171,7 @@ class PredSim(FastSim):
             e[rep] -= c["pred_rep_cost"]
             sd = MUT_STRENGTH if c["pred_evolve"] else 0.0
 
-            def mut(a):
-                a = a.copy()
+            def mut(a):  # a is a fresh copy already (fancy indexing)
                 if sd > 0:
                     m = r.random(a.shape) < MUT_RATE
                     a[m] += r.normal(0, sd, int(m.sum())).astype(a.dtype)
@@ -184,6 +185,27 @@ class PredSim(FastSim):
         if dead.any():
             self.pred_stats["deaths"] += int(dead.sum())
             self._keep_pred(~dead)
+
+    def _use_pred_kernel(self):
+        return HAVE_NUMBA and self.cfg.get("pred_kernel", "numba") == "numba"
+
+    def _pred_brain_py(self, prey_occ, pred_occ, u):
+        """Reference (NumPy) predator brain: same inputs and sampling rule as pred_sense_think."""
+        c, S, P = self.cfg, self.size, self.pred
+        n = self.n_pred
+        cx, cy = (P["x"][:, None] + self._ox) % S, (P["y"][:, None] + self._oy) % S
+        X = np.zeros((n, P_IN), np.float32)
+        X[:, :25] = np.log1p(prey_occ[cx, cy])
+        po = pred_occ[cx, cy]
+        po[:, 12] -= 1.0
+        X[:, 25:50] = po > 0
+        X[:, 50] = P["e"] / c["pred_max_e"]
+        X[:, 51] = P["age"] / c["pred_max_age"]
+        h = np.tanh(np.einsum("ni,nih->nh", X, P["w1"]) + P["b1"])
+        out = np.einsum("nh,nho->no", h, P["w2"]) + P["b2"]
+        out = (out - out.max(1, keepdims=True)).astype(np.float64)
+        p = np.exp(out); p /= p.sum(1, keepdims=True)
+        return np.minimum((np.cumsum(p, 1) < u[:, None]).sum(1), P_OUT - 1)
 
     # ---------------------------------------------------------------- logging
     def _novelty(self):

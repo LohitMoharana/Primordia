@@ -963,3 +963,27 @@ Verdict: a **one-sided arms race**. Predators keep improving for the whole milli
 (using predator information, absent at 50k) but lose ground overall. This is the first Primordia world where something keeps
 changing late, and the first new evolved use of a sense since social sensing. Next: give prey better options (speed, hiding),
 fix the random-brain newcomer rule, and test whether predators make warning signals worth sending.
+
+## Engine speed-ups (25 Nov 2026)
+
+Profiled first (cProfile + per-kernel timers on saved 1M-tick worlds):
+arms race: Python predator step ~45-60% of each tick (one `searchsorted` call per candidate cell per attack);
+terrain/prey worlds: the compiled sense-and-think kernel ~75%, spawning children ~12%, movement ~4%, world update ~4%.
+
+Changes:
+1. **Compiled predators** (`kernels.pred_sense_think`, parallel over predators; `kernels.pred_attacks`). Random numbers are still
+   drawn in NumPy in the same order, so results are **bit-identical** to the old Python code (checked: 2,000 ticks from a 1M save,
+   and 12,000 ticks of a fresh arms-race world, same positions/energies/kill counts). The Python path is kept as reference and fallback
+   (`cfg["pred_kernel"] = "python"`, or automatically without Numba). Occupancy grids now use `bincount` (identical counts).
+2. **Thread sharing between runs.** `replicate_modes.py --threads N` (default: all CPU threads) splits N over the running runs and
+   rewrites each run's `THREADS` file as runs finish; runs re-read it every 500 ticks (`FastSim.set_threads`). Results do not depend on
+   the thread count (checked: identical hashes at 1 and 2 threads, terrain and arms race). Idle worker threads sleep (OMP_WAIT_POLICY=PASSIVE).
+3. Small exact clean-ups: no double copy when mutating children; ticks/s printout now counts only ticks run in this session.
+
+Not changed, on purpose: mutation and world-update random draws (~4% each could be saved, but only by changing the random stream,
+so new runs would no longer reproduce old ones); the GPU engine (only matters for 50k+ agent worlds).
+
+Speed (laptop Linux VM, 2 cores; same saved arms-race world): old 305 ticks/s -> compiled predators 438 (1 thread, 1.44x) -> 600 (2 threads, 1.97x).
+Cloud, same saves: arms ON world 437 -> 729 ticks/s (1.67x), arms OFF 236 -> 336 (1.42x); terrain 1 -> 2 threads 275 -> 386 (1.40x).
+All existing modes (stage13, sparse2_memory, sparse2_language, terrain_language, arms_race) reproduce the old engine bit for bit;
+old saves resume correctly. `fast/bench_speedup.py` measures 1..all threads on the laptop.

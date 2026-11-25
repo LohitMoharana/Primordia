@@ -17,8 +17,29 @@ ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 2))
 ap.add_argument("--engine", choices=["numba", "torch"], default="numba")
 ap.add_argument("--ticks", type=int, default=None, help="override the mode's tick target")
 ap.add_argument("--checkpoint-every", type=int, default=None)
+ap.add_argument("--threads", type=int, default=os.cpu_count() or 2,
+                help="threads shared by all running runs; as runs finish, the rest get more")
 a = ap.parse_args()
-env = dict(os.environ, NUMBA_NUM_THREADS="1")
+# every run may use up to --threads; the share it actually uses is written to <run>/THREADS
+# (idle worker threads sleep instead of spinning)
+env = dict(os.environ, NUMBA_NUM_THREADS=str(max(1, a.threads)), OMP_WAIT_POLICY="PASSIVE", KMP_BLOCKTIME="0")
+
+
+def share_threads(running):
+    """Split --threads over the running runs (at least 1 each) and tell each run its share."""
+    if not running:
+        return
+    base, extra = divmod(a.threads, len(running))
+    for i, item in enumerate(running):
+        n = max(1, base + (1 if i < extra else 0))
+        path = os.path.join(item[4], "THREADS")
+        try:
+            with open(path + ".tmp", "w") as f:
+                f.write(str(n))
+            os.replace(path + ".tmp", path)
+        except OSError:
+            pass
+
 
 def finished(out, ticks):
     if os.path.exists(os.path.join(out, "EXTINCT")):
@@ -39,6 +60,7 @@ print(f"{len(queue)} runs to do, {a.jobs} at a time", flush=True)
 running = []
 t0 = time.time()
 while queue or running:
+    changed = False
     while queue and len(running) < a.jobs:
         m, arm, s, out, ticks = queue.pop(0)
         os.makedirs(out, exist_ok=True)
@@ -46,14 +68,19 @@ while queue or running:
                "--seed", str(s), "--ticks", str(ticks), "--engine", a.engine]
         if a.checkpoint_every:
             cmd += ["--checkpoint-every", str(a.checkpoint_every)]
-        p = subprocess.Popen(cmd, cwd=HERE, env=env, stdout=open(os.path.join(out, "stdout.log"), "a"),
-                             stderr=subprocess.STDOUT)
+        with open(os.path.join(out, "THREADS"), "w") as f:
+            f.write("1")  # until share_threads() below gives the real share
+        logh = open(os.path.join(out, "stdout.log"), "a")
+        p = subprocess.Popen(cmd, cwd=HERE, env=env, stdout=logh, stderr=subprocess.STDOUT)
+        logh.close()  # the child keeps its own handle
         running.append((p, m, arm, s, out, ticks))
+        changed = True
     for item in list(running):
         p, m, arm, s, out, ticks = item
         if p.poll() is None:
             continue
         running.remove(item)
+        changed = True
         logf = os.path.join(out, "log.csv")
         if p.returncode != 0 or not os.path.exists(logf):
             err = open(os.path.join(out, "stdout.log")).read().strip().splitlines()[-3:]
@@ -68,5 +95,7 @@ while queue or running:
             open(os.path.join(out, "EXTINCT"), "w").close()
         status = "EXTINCT" if pop == 0 else "done"
         print(f"[{time.time() - t0:5.0f}s] {m} {arm} seed{s}: {status}", flush=True)
+    if changed:
+        share_threads(running)
     time.sleep(1)
 print("ALL DONE", flush=True)

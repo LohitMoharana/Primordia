@@ -402,3 +402,99 @@ if HAVE_NUMBA:
                 elif f > max_food:
                     f = max_food
                 food[p, q] = f
+
+
+# --------------------------------------------------------------------------- predators
+# Compiled versions of the predator step in predators.py. Random numbers are still
+# drawn in NumPy, in the same order, so the compiled and Python paths consume the
+# random stream identically; only float rounding in the brain can differ.
+if HAVE_NUMBA:
+    @njit(parallel=True, cache=True)
+    def pred_sense_think(px, py, pe, page, w1, b1, w2, b2, prey_occ, pred_occ, u,
+                         max_e, max_age, out_act):
+        S = prey_occ.shape[0]
+        n = px.shape[0]
+        H = b1.shape[1]
+        O = b2.shape[1]
+        hb = np.empty((n, H), np.float32)
+        pb = np.empty((n, O), np.float64)
+        for k in prange(n):
+            h = hb[k]
+            for j in range(H):
+                h[j] = 0.0
+            x = px[k]
+            y = py[k]
+            c = 0
+            for dx in range(-2, 3):
+                for dy in range(-2, 3):
+                    cx = (x + dx) % S
+                    cy = (y + dy) % S
+                    v = prey_occ[cx, cy]
+                    if v != 0.0:
+                        vf = np.float32(np.log1p(v))
+                        for j in range(H):
+                            h[j] += vf * w1[k, c, j]
+                    po = pred_occ[cx, cy]
+                    if c == 12:
+                        po -= 1.0
+                    if po > 0.0:
+                        for j in range(H):
+                            h[j] += w1[k, 25 + c, j]
+                    c += 1
+            ef = np.float32(pe[k] / max_e)
+            gf = np.float32(page[k] / max_age)
+            for j in range(H):
+                h[j] = np.tanh(h[j] + ef * w1[k, 50, j] + gf * w1[k, 51, j] + b1[k, j])
+            p = pb[k]
+            m = -1e300
+            for o in range(O):
+                s = np.float32(b2[k, o])
+                for j in range(H):
+                    s += h[j] * w2[k, j, o]
+                p[o] = s
+                if s > m:
+                    m = s
+            tot = 0.0
+            for o in range(O):
+                p[o] = np.exp(p[o] - m)
+                tot += p[o]
+            # same rule as the NumPy path: count cumulative probabilities below u
+            cum = 0.0
+            a = 0
+            for o in range(O):
+                cum += p[o] / tot
+                if cum < u[k]:
+                    a += 1
+            out_act[k] = min(a, O - 1)
+
+    @njit(cache=True)
+    def pred_attacks(att, perm, x0, y0, prey_idx, order, cs, alive, ua, uc, catch_p, kill_gain,
+                     e, S, stats):
+        """Attacks in random order (perm); each picks a random live prey within radius 1
+        of the attacker's start-of-tick cell and catches it with probability catch_p.
+        stats[0] += attacks, stats[1] += kills."""
+        cand = np.empty(64, np.int64)
+        for qq in range(perm.shape[0]):
+            q = perm[qq]
+            j = att[q]
+            stats[0] += 1
+            nc = 0
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    cc = ((x0[j] + dx) % S) * S + (y0[j] + dy) % S
+                    lo = np.searchsorted(cs, cc)
+                    hi = np.searchsorted(cs, cc, side="right")
+                    for t in range(lo, hi):
+                        g = prey_idx[order[t]]
+                        if alive[g]:
+                            if nc == cand.shape[0]:
+                                bigger = np.empty(nc * 2, np.int64)
+                                bigger[:nc] = cand
+                                cand = bigger
+                            cand[nc] = g
+                            nc += 1
+            if nc > 0 and ua[q] < catch_p:
+                victim = cand[int(uc[q] * nc)]
+                alive[victim] = False
+                e[j] += kill_gain
+                stats[1] += 1

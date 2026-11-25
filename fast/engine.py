@@ -732,8 +732,7 @@ class FastSim:
         r = self.rng
         n = len(par)
 
-        def mut(a):
-            a = a.copy()
+        def mut(a):  # a is a fresh copy already (fancy indexing), so mutate it in place
             m = r.random(a.shape) < MUT_RATE
             a[m] += r.normal(0, MUT_STRENGTH, int(m.sum())).astype(a.dtype)
             return a
@@ -806,13 +805,35 @@ class FastSim:
             sim.log_path = os.path.join(out_dir, "log.csv")
         return sim
 
+    def set_threads(self, n):
+        """Threads for the compiled kernels (results do not depend on this: every
+        agent's sensing and thinking is computed independently)."""
+        if HAVE_NUMBA:
+            import numba
+            n = max(1, min(int(n), numba.config.NUMBA_NUM_THREADS))
+            if n != numba.get_num_threads():
+                numba.set_num_threads(n)
+
+    def _sync_threads(self):
+        # the batch runner (replicate_modes.py) writes the thread share for this run into
+        # <out_dir>/THREADS and raises it as other runs finish
+        try:
+            with open(os.path.join(self.out_dir, "THREADS")) as f:
+                self.set_threads(int(f.read().strip() or 1))
+        except (OSError, ValueError):
+            pass
+
     def run(self, ticks, extinction_stops=True, verbose=False):
         rows = []
         t0 = time.time()
+        tick0 = self.tick
         if self.out_dir:
             self._births = []  # family tree: every birth with its parent and founding lineage
+            self._sync_threads()
         for _ in range(ticks):
             self.step()
+            if self.out_dir and self.tick % 500 == 0:
+                self._sync_threads()
             if self.tick % LOG_EVERY == 0:
                 rows.append(self.log_row())
                 if self.out_dir and len(rows) >= 50:
@@ -826,7 +847,7 @@ class FastSim:
             if extinction_stops and self.population == 0:
                 break
             if verbose and self.tick % 1000 == 0:
-                print(f"tick {self.tick} pop {self.population} {self.tick / (time.time() - t0):.0f} ticks/s")
+                print(f"tick {self.tick} pop {self.population} {(self.tick - tick0) / (time.time() - t0):.0f} ticks/s")
         if self.out_dir:
             self._flush(rows)
             self._flush_births()
