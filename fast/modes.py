@@ -264,3 +264,21 @@ MODES.update({
                         kw=lambda on: dict(STEPS, dig_steps=1, dig_sequence=("mark", "stay", "mate", "eat"),
                                            dig_partial=0.25 if on else 0.0, share_multiplier=1.0)),
 })
+
+# MEMORY UNDER PRESSURE: does working memory evolve once a problem needs it?
+# Buried food pays in full only after dig (mark), stay, eat on one cell, in that order. Standing
+# on one cell the senses barely change, so a purely reactive brain can only hit the order by
+# chance; memory (hidden state carried to the next tick, starting at zero weights) can track
+# the step. Two modes x two arms = 4 arms:
+#   memseq_mem    memory ON;  ON: stepping stones (step 2 pays 1/4), OFF: only the whole sequence pays
+#   memseq_nomem  memory OFF; same two arms
+# Gifts break even. 200k ticks.
+MEMSEQ = dict(STEPS, dig_steps=1, dig_sequence=("mark", "stay", "eat"), share_multiplier=1.0)
+
+MODES.update({
+    "memseq_mem": dict(name="92_memseq_mem", prefix="memseq", ticks=200000, founders="stage5",
+                       kw=lambda on: dict(MEMSEQ, memory=True, zero_memory_weights=True,
+                                          dig_partial=0.25 if on else 0.0)),
+    "memseq_nomem": dict(name="93_memseq_nomem", prefix="memseq", ticks=200000, founders="stage5",
+                         kw=lambda on: dict(MEMSEQ, memory=False, dig_partial=0.25 if on else 0.0)),
+})
