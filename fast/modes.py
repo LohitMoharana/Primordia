@@ -232,3 +232,23 @@ MODES.update({
     "storage_family": dict(name="62_storage_family", prefix="storage", ticks=100000, founders="stage5",
                            kw=lambda on: _store(storage=on, store_access="family")),
 })
+
+# ---------------------------------------------------------------------------
+# REPLICATION 1: STEPPING STONES (after Lenski, Ofria, Pennock & Adami 2003, Nature: in Avida
+# the complex EQU function evolved only when simpler functions were also rewarded).
+# Buried food pays in full only after 4 digs in a row on the same cell (a behaviour
+# sequence). ON: each earlier dig pays 1/4 (stepping stones). OFF: only the full sequence pays.
+# No digestion trade-off (everyone digests both foods fully), so the only question is
+# whether the 4-step sequence evolves. 100k ticks.
+# Buried food is sensed on the same 0-1 scale as surface food (buried_sense_scale 0.5; full
+# buried cells hold 2.0). At full scale the control died out early on 3/3 test seeds: the
+# founders' weights for this sense start at zero, but every child's mutations put noise on
+# them, and a strong, useless signal times that noise is a real cost. At half scale seeds 1-2
+# survive.
+STEPS = dict(SPARSE2, buried=True, buried_base=1.0, gut_init_max=0.0, gut_mut=0.0, dig_steps=4,
+             buried_sense_scale=0.5)
+
+MODES.update({
+    "steps": dict(name="90_steps", prefix="steps", ticks=100000, founders="stage5",
+                  kw=lambda on: dict(STEPS, dig_partial=0.25 if on else 0.0)),
+})

@@ -35,18 +35,30 @@ DIG_GAIN = 1.0
 
 
 class WaysSim(PredSim):
-    _FIELDS = PredSim._FIELDS + ["gut"]
-    _METER = PredSim._METER + ["_dig_counts"]
+    _FIELDS = PredSim._FIELDS + ["gut", "dig_streak"]
+    _METER = PredSim._METER + ["_dig_counts", "_steps_stats"]
 
     def __init__(self, *args, buried=True, n_soil=6, soil_sigma=6.0, buried_regrow=0.02, buried_max=2.0,
-                 gut_q=1.5, gut_mut=0.05, gut_init_max=1.0, buried_base=0.0, predators=False, **kw):
+                 gut_q=1.5, gut_mut=0.05, gut_init_max=1.0, buried_base=0.0, dig_steps=1, dig_partial=0.0,
+                 quiet_new_sense=False, buried_sense_scale=1.0, predators=False, **kw):
+        if quiet_new_sense and kw.get("founders") is not None:
+            # NEUTRAL INTRODUCTION: the founders evolved in a world without buried food, so their
+            # weights for its input rows (150-174) are leftover drift that would feed noise into
+            # a working brain. Start them at zero: the new sense is harmless until evolution wires it.
+            f = dict(kw["founders"])
+            w1 = np.array(f["w1"], copy=True)
+            w1[:, 150:175, :] = 0.0
+            f["w1"] = w1
+            kw["founders"] = f
         super().__init__(*args, predators=predators, **kw)
         seed = int(kw.get("seed", args[0] if args else 1))
         self.rng_ways = np.random.default_rng([seed, 4242])
         self.cfg.update(buried=bool(buried), n_soil=int(n_soil), soil_sigma=float(soil_sigma),
                         buried_regrow=float(buried_regrow), buried_max=float(buried_max),
                         gut_q=float(gut_q), gut_mut=float(gut_mut), gut_init_max=float(gut_init_max),
-                        buried_base=float(buried_base))
+                        buried_base=float(buried_base), dig_steps=int(dig_steps), dig_partial=float(dig_partial),
+                        quiet_new_sense=bool(quiet_new_sense), buried_sense_scale=float(buried_sense_scale))
+        self._steps_stats = dict(completed=0, partial=0, dug_partial=0.0, dug_complete=0.0)
         S = self.size
         rw = self.rng_ways
         # rich soil: n_soil fixed Gaussian patches (toroidal); buried food regrows only there
@@ -71,17 +83,20 @@ class WaysSim(PredSim):
     def _alloc(self, cap):
         super()._alloc(cap)
         self.gut = np.zeros(cap)
+        self.dig_streak = np.zeros(cap, np.int64)
 
     def _spawn_children(self, par):
         s = super()._spawn_children(par)
         c = self.cfg
         self.gut[s] = np.clip(self.gut[par] + self.rng_ways.normal(0, c["gut_mut"], len(par)), 0.0, 1.0)
+        self.dig_streak[s] = 0  # a reused slot must not inherit a dead creature's streak
         return s
 
     # ---------------------------------------------------------------- hooks
     def _mark_slot_args(self):
         if self.cfg.get("buried", False):
-            return self.buried, True
+            k = self.cfg.get("buried_sense_scale", 1.0)
+            return (self.buried if k == 1.0 else self.buried * k), True
         return super()._mark_slot_args()
 
     def _dig_eff(self, i):
@@ -97,6 +112,8 @@ class WaysSim(PredSim):
             return
         dig = np.flatnonzero(act == A["mark"])  # dig action (its energy cost was paid in the action phase)
         self._dig_counts += len(dig)
+        if c.get("dig_steps", 1) > 1:
+            return self._dig_sequence(idx, act, x0, y0, e, keys, dead, dig)
         if not len(dig):
             return
         # diggers in one cell take buried food in random-key order, up to DIG_GAIN each (as eating)
@@ -114,6 +131,47 @@ class WaysSim(PredSim):
         np.maximum(self.buried, 0.0, out=self.buried)
         e[dig] = np.minimum(e[dig] + gg * self._dig_eff(idx[dig]), MAX_ENERGY)
         # a digger saved by its meal survives (same death rule as the action phase)
+        dead[dig] = ((e[dig] <= 0) | (self.age[idx[dig]] >= MAX_AGE)).astype(dead.dtype)
+
+    def _dig_sequence(self, idx, act, x0, y0, e, keys, dead, dig):
+        """STEPPING STONES (dig_steps = K > 1). Buried food pays in full only to a creature that
+        digs K times in a row on the same cell (digging does not move you, so 'in a row' = its
+        previous action was also a dig there). Each earlier dig in the streak pays dig_partial x
+        DIG_GAIN (0 in the control). Any other action, or digging where nothing is buried, resets
+        the streak."""
+        c, S, K = self.cfg, self.size, self.cfg["dig_steps"]
+        st = self._steps_stats
+        streak = self.dig_streak
+        prev_dig = self.last_action[idx] == A["mark"]  # last tick's action (written after this hook)
+        not_dig = np.ones(len(idx), bool)
+        not_dig[dig] = False
+        streak[idx[not_dig]] = 0
+        if not len(dig):
+            return
+        cell = x0[dig] * S + y0[dig]
+        has = self.buried.ravel()[cell] >= 0.05
+        s_new = np.where(has, np.where(prev_dig[dig], streak[idx[dig]] + 1, 1), 0)
+        complete = has & (s_new >= K)
+        want = np.where(complete, DIG_GAIN, np.where(has, c["dig_partial"] * DIG_GAIN, 0.0))
+        # several diggers in one cell share it in random-key order, each taking what it asks for
+        order = np.lexsort((keys[dig], cell))
+        cell_s, want_s = cell[order], want[order]
+        first = np.r_[True, cell_s[1:] != cell_s[:-1]]
+        grp = np.cumsum(first) - 1
+        cum = np.cumsum(want_s)
+        before = cum - want_s - (cum - want_s)[np.flatnonzero(first)][grp]
+        avail = self.buried.ravel()[cell_s]
+        got_s = np.clip(avail - before, 0.0, want_s)
+        got = np.empty(len(dig))
+        got[order] = got_s
+        np.add.at(self.buried.ravel(), cell, -got)
+        np.maximum(self.buried, 0.0, out=self.buried)
+        e[dig] = np.minimum(e[dig] + got * self._dig_eff(idx[dig]), MAX_ENERGY)
+        streak[idx[dig]] = np.where(complete, 0, s_new)
+        st["completed"] += int(complete.sum())
+        st["partial"] += int((has & ~complete).sum())
+        st["dug_complete"] += float(got[complete].sum())
+        st["dug_partial"] += float(got[~complete].sum())
         dead[dig] = ((e[dig] <= 0) | (self.age[idx[dig]] >= MAX_AGE)).astype(dead.dtype)
 
     def _world_step(self, foods=None):
@@ -147,6 +205,19 @@ class WaysSim(PredSim):
                         round(self._dig_counts / max(1, total), 4), round(float(self.buried.sum()), 1)]
                        + [round(float(h), 4) for h in hist])
         self._dig_counts = 0
+        if self.cfg.get("dig_steps", 1) > 1:
+            st = self._steps_stats
+            path = os.path.join(self.out_dir, "steps.csv")
+            new = not os.path.exists(path)
+            with open(path, "a", newline="") as f:
+                w = csv.writer(f)
+                if new:
+                    w.writerow(["tick", "population", "completed_sequences", "partial_digs", "food_from_complete",
+                                "food_from_partial", "mean_streak"])
+                w.writerow([self.tick, len(idx), st["completed"], st["partial"], round(st["dug_complete"], 2),
+                            round(st["dug_partial"], 2),
+                            round(float(self.dig_streak[idx].mean()) if len(idx) else 0, 3)])
+            self._steps_stats = dict(completed=0, partial=0, dug_partial=0.0, dug_complete=0.0)
 
     # ---------------------------------------------------------------- save / load
     def _checkpoint_extra(self):
@@ -165,4 +236,6 @@ class WaysSim(PredSim):
         sim.rng_ways.bit_generator.state = d["rng_ways_state"]
         if not hasattr(sim, "_dig_counts"):
             sim._dig_counts = 0
+        if not hasattr(sim, "_steps_stats"):
+            sim._steps_stats = dict(completed=0, partial=0, dug_partial=0.0, dug_complete=0.0)
         return sim

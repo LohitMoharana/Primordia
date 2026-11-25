@@ -1109,3 +1109,40 @@ Mode `arms2b_shelter` (slow newcomers, 2 energy per catch), 10 seeds x 2 arms, 1
 Verdict: with the fixed newcomer rule predators keep improving even faster; prey still don't keep up. **Shelters that prey never learn to
 use do not protect them: they cost enough to tip boom-and-bust worlds into collapse (6/10 vs 0/10).** Classic ecology says refuges
 stabilise predator-prey systems; here a refuge only helps if evolution discovers how to use it, and it didn't.
+
+## Correction (25 Nov 2026): new senses were never "noise from the founders"
+
+The stage-5 founders' weights for every input added later (rows 100-224: shelters/kin, walls/predators, buried food/markers,
+second symbol, shared food) are exactly zero (checked: mean |w| 0.0000). So new senses were always introduced neutrally, and the
+explanation offered above for shelter worlds ("the shelter sense feeds random signals into brains evolved without it") is wrong as
+stated. What does happen: every child's mutations put noise on those weights (10% of them per birth); in a world where the input
+is always zero that noise is invisible, but where the input is present it acts on a real signal, and if the sense is useless the
+noise is pure cost. Test (stepping-stones control, seed 2): buried food sensed at value 2.0 -> population 718 -> 35 -> extinct by
+6.8k ticks; buried food absent -> ~1,500; sensed at 0-1 scale (as surface food) -> survives (seeds 1-2, 15k ticks).
+
+## Food storage, public stores: 10 seeds (25 Nov 2026, 100k ticks)
+
+Store actions: ON 0.10% of actions vs OFF 0.97% (every ON run below every OFF run, 10/10); take actions ON 1.40% vs OFF 0.78%;
+only 6-16% of what is taken returns to the creature that stored it; population ON 1,639 vs OFF 1,810. Verdict: **tragedy of the
+commons** - saving is selected against when stores are public; taking is selected for. Private (`storage_private`) and family
+(`storage_family`) stores are built and tested, not yet run.
+
+## Building shelters: 10 seeds (25 Nov 2026, 300k ticks)
+
+- Survival 10/10 with building, 10/10 without (placed shelters: 4/10 vs 10/10).
+- Building persisted in 7/10 worlds (250-650 shelters standing, ~2% of cells; 260-640 built per 1,000 ticks) and was abandoned in
+  3/10 (seeds 5, 8, 9: <90 shelters).
+- In all 7 building worlds prey stand in shelters more than the shelter share of cells: x1.2 to x2.3 at the last save (placed shelters:
+  x1.0). Caution: a builder is inside the shelter it has just built, which inflates this; a lesion test is needed.
+- **Seed 7 (ON) blew up:** 5,863 -> 267,542 creatures within 500 ticks at 108k (constant food) and ran out of memory. Sharing jumped from
+  ~1% to 9% of actions as it happened. Cause: a loophole in the world's rules: a gift costs the giver 0.5 and gives the receiver
+  1.0 (SHARE_MULTIPLIER 2, from the kin-sharing stage), so two creatures passing energy back and forth create energy from nothing;
+  crowded safe shelters made reliable partners. First genuinely unscripted strategy found in Primordia, but it exploits a flaw: the
+  multiplier needs to go (or sharing must lose energy) before more long runs.
+
+## Replication 1, stepping stones (Lenski et al. 2003): set-up (25 Nov 2026)
+
+Mode `steps`: buried food pays in full only to a creature that digs 4 times in a row on the same cell; ON: each earlier dig pays 1/4;
+OFF: only the full sequence pays. No digestion trade-off; buried food sensed on a 0-1 scale (see correction above).
+Calibration: ON seed 2: completed sequences 0 (5k) -> 2 (10k) -> 316 (15k) -> 2,932 per 5k ticks (20k); an earlier full-scale test
+reached ~75-80k completions per 5k ticks by 55-80k. OFF seed 3: 0-14 per 5k ticks (chance) to 25k.

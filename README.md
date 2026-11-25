@@ -54,6 +54,8 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ✅ | **Several ways to live** | With buried food reachable only by digging and a heritable digestion trade-off, digging evolved in **7/7** surviving worlds, and in **3/7** the population split into two coexisting groups (surface eaters and diggers) that **lasted a million ticks** (~53/47, swinging back whenever one group grew too common), with matching behaviour and each dependent on its own food in lesion tests. Control: 0/10. |
 | ✅ | **Evolving predators** | A one-sided arms race. Predators keep getting better at hunting for a million ticks (**+46%**, 9/10 seeds; frozen predators: no gain). Prey evolve a real defence, reacting to predators they can sense (blinding them raises kills on 9/10 seeds), but still lose ground. |
 | ❌ | Shelters (placed) | Prey never learned to use them, and they made collapse **more** likely: 6/10 shelter worlds died out vs 0/10 without (p ≈ 0.005). A refuge only helps if evolution discovers it. |
+| 🟡 | Shelters (built by prey) | All 10 worlds survived (placed: 4/10). Building persisted in 7/10, and prey stand in shelters 1.2–2.3× more than chance. One world found a loophole (energy-creating gifts) and exploded. |
+| ❌ | Food storage (public) | Tragedy of the commons: storing is selected against (0.10% of actions vs 0.97% when it does nothing, 10/10); taking is selected for. |
 | ❌ | Two-symbol language | Not used, even in walled terrain. A 5-seed "hint" vanished at 10 seeds and at 1,000,000 ticks. |
 | ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
