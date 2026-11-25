@@ -208,3 +208,16 @@ MODES.update({
     "brain_arms": dict(name="81_brain_arms", prefix="brain", ticks=300000, founders="stage5",
                        kw=lambda on: dict(ARMS2B, brain_evolve=True, brain_wired=on)),
 })
+
+# ---------------------------------------------------------------------------
+# COMBINATION: SEVERAL WAYS TO LIVE + EVOLVING PREDATORS. The `ways` world (buried food,
+# gut trade-off) with the round-2b predators (evolving, slow newcomers, 2 energy per catch).
+# ON: buried food (two ways to live) with predators. OFF: no buried food, with predators.
+# Compare with `ways` (no predators): does predation break the split, or strengthen it?
+WAYS_PRED = dict(WAYS, predators=True, pred_delay=3000, catch_p=0.2, pred_evolve=True,
+                 pred_immigrants="bank", immigrant_every=200, kill_gain=2.0)
+
+MODES.update({
+    "ways_pred": dict(name="51_ways_pred", prefix="buried", ticks=300000, founders="stage5",
+                      kw=lambda on: dict(WAYS_PRED, buried=on)),
+})
