@@ -286,16 +286,22 @@ MODES.update({
 # ---------------------------------------------------------------------------
 # OPEN BRAINS (Soros & Stanley 2014, condition 4: the potential complexity of the phenotype
 # should not be limited by its representation). Their world Chromaria stagnated when one of
-# the four conditions was removed; this is the same controlled test in Primordia. World: several
-# ways to live + evolving predators (WAYS_PRED), gifts break even, working memory on (starting
-# unwired). ON: brains grow without a fixed size (brain_open; arrays widened on demand, safety
+# the four conditions was removed; this is the same controlled test in Primordia. Working memory
+# on (starting unwired). ON: brains grow without a fixed size (brain_open; arrays widened on demand, safety
 # ceiling 128 units). OFF: brain size changes and costs exactly the same, but units beyond the
 # founders' 24 are never wired in (brain_wired=False), so the representation stays capped.
 # Measured with MODES (oee_modes.py, modes_compare.py).
-OPEN = dict(WAYS_PRED, share_multiplier=1.0, memory=True, zero_memory_weights=True,
+# World: the ASAL search's healthy starting world (asal_world.default_start: food in 13 drifting
+# clusters, buried food, gifts break even; 1500-2900 creatures in tests) plus 40 evolving predators
+# with a gentle catch chance (0.1). (A first version on WAYS_PRED died out in 6 of 6 runs: without
+# the 2x gift loophole that world has too little food.)
+OPEN_WORLD = {'size': 128, 'food_mode': 'patches', 'n_patches': 13, 'patch_sigma': 4.0, 'patch_speed': 0.06, 'patch_turn': 0.05, 'patch_peak': 0.10169216204216283, 'patch_life': 632.4555320336759, 'founders_near_patches': True, 'social_sensing': True, 'communication': True, 'seasons': False, 'season_amplitude': 0.0, 'season_period': 774, 'hazards': False, 'hazard_fraction': 0.005, 'cofood': False, 'cofood_spawn_prob': 0.0, 'memory': False, 'share_multiplier': 1.0, 'buried': True, 'n_soil': 3, 'buried_base': 0.5, 'gut_init_max': 0.2, 'gut_mut': 0.05, 'gut_q': 1.75, 'predators': False, 'n_pred': 5, 'pred_delay': 1000, 'catch_p': 0.1414213562373095, 'kill_gain': 2.0, 'pred_evolve': True, 'pred_immigrants': 'bank', 'immigrant_every': 200, 'shelter_frac': 0.0}
+OPEN = dict(OPEN_WORLD, predators=True, n_pred=40, pred_delay=3000, catch_p=0.1, kill_gain=2.0,
+            pred_evolve=True, pred_immigrants="bank", immigrant_every=200,
+            memory=True, zero_memory_weights=True,
             brain_evolve=True, brain_open=True, nact_mut_p=0.1)  # size changes in 10% of births
 
 MODES.update({
-    "open_brains": dict(name="95_open_brains", prefix="brain", ticks=100000, founders="stage5",
+    "open_brains": dict(name="96_open_brains", prefix="brain", ticks=100000, founders="stage5",
                         kw=lambda on: dict(OPEN, brain_wired=on)),
 })
