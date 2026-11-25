@@ -23,7 +23,7 @@ if HAVE_NUMBA:
     def sense_think(idx, xs, ys, energy, age, food, occ, sig, haz, cof,
                     social, w1, b1, w2, b2, u, max_energy, max_age, out_act,
                     memory, wh, hstate, sig2, ws, bs, u2, sig0, nsym, out_sym2, wall, has_wall,
-                    kin, has_kin):
+                    kin, has_kin, mark, has_mark):
         S = food.shape[0]
         n = idx.shape[0]
         H = b1.shape[1]
@@ -99,6 +99,14 @@ if HAVE_NUMBA:
                         wr = w1[a, 125 + c]
                         for j in range(H):
                             h[j] += wr[j]
+            if has_mark:  # buried food nearby (inputs 150-174, the unused marker slot)
+                for c in range(25):
+                    v = mark[cxs[c], cys[c]]
+                    if v != 0.0:
+                        vf = np.float32(v)
+                        wr = w1[a, 150 + c]
+                        for j in range(H):
+                            h[j] += vf * wr[j]
             if has_kin:  # shelters nearby (inputs 100-124, the unused kin slot)
                 for c in range(25):
                     if kin[cxs[c], cys[c]] != 0.0:
@@ -201,7 +209,7 @@ if HAVE_NUMBA:
     def act_phase(act, xs, ys, e, age, food, hazard, keys, su, S,
                   A_STAY, A_N, A_S, A_E, A_W, A_EAT, A_REP, A_MATE, A_MARK, A_SHARE, SIG0, NSYM,
                   IDLE, MOVE, SIGC, MARKC, EAT_GAIN, REP_MIN, REP_COST, SHARE_COST, SHARE_AMT,
-                  HAZ, MAX_E, MAX_AGE, rep_out, dead_out, recv_out, wall):
+                  HAZ, MAX_E, MAX_AGE, rep_out, dead_out, recv_out, wall, eff):
         """Everything an agent's chosen action does this tick, for all agents.
 
         Inputs are local arrays (one entry per alive agent, in idx order).
@@ -256,7 +264,7 @@ if HAVE_NUMBA:
             if g < 0.0:
                 g = 0.0
             food[x0[k], y0[k]] = avail - g
-            e[k] += g
+            e[k] += g * eff[k]  # eff = 1 except in the several-ways-to-live world (gut trade-off)
         # reproduction
         for k in range(n):
             rep_out[k] = 0

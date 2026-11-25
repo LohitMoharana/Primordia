@@ -39,17 +39,19 @@ P_IN, P_HID, P_OUT = 52, 16, len(P_ACTIONS)
 
 
 class PredSim(FastSim):
+    _METER = FastSim._METER + ["_pred_act_counts", "_prev_pred_share"]
     def __init__(self, *args, predators=True, n_pred=60, pred_evolve=True, pred_floor=10,
                  pred_idle=0.02, pred_move=0.04, pred_attack=0.05, kill_gain=3.0, catch_p=0.5,
                  pred_max_e=15.0, pred_start_e=8.0, pred_rep_min=10.0, pred_rep_cost=6.0,
-                 pred_max_age=800, pred_delay=0, pred_immigrants="founders", bank_size=30, **kw):
+                 pred_max_age=800, pred_delay=0, pred_immigrants="founders", bank_size=30, immigrant_every=1, **kw):
         super().__init__(*args, **kw)
         self.cfg.update(predators=bool(predators), n_pred=int(n_pred), pred_evolve=bool(pred_evolve),
                         pred_floor=int(pred_floor), pred_idle=pred_idle, pred_move=pred_move,
                         pred_attack=pred_attack, kill_gain=kill_gain, catch_p=catch_p,
                         pred_max_e=pred_max_e, pred_start_e=pred_start_e, pred_rep_min=pred_rep_min,
                         pred_rep_cost=pred_rep_cost, pred_max_age=int(pred_max_age),
-                        pred_delay=int(pred_delay), pred_immigrants=str(pred_immigrants), bank_size=int(bank_size))
+                        pred_delay=int(pred_delay), pred_immigrants=str(pred_immigrants), bank_size=int(bank_size),
+                        immigrant_every=int(immigrant_every))
         self.pred_bank = None  # brains of the most recently dead predators (pred_immigrants="bank")
         r, S = self.rng, self.size
         n = int(n_pred)
@@ -108,8 +110,11 @@ class PredSim(FastSim):
             n = c["n_pred"]
             self._add_pred(np.arange(n), r.integers(0, S, n), r.integers(0, S, n))
         P = self.pred
-        if self.n_pred < c["pred_floor"]:
-            k = c["pred_floor"] - self.n_pred
+        every = c.get("immigrant_every", 1)
+        if self.n_pred < c["pred_floor"] and (every <= 1 or self.tick % every == 0):
+            # immigrant_every = 1: top up to the floor at once (round 1); > 1: one newcomer
+            # every `every` ticks while predators are scarce, so prey get a breathing window
+            k = c["pred_floor"] - self.n_pred if every <= 1 else 1
             bank = self.pred_bank
             if c.get("pred_immigrants", "founders") == "bank" and bank is not None and len(bank["w1"]):
                 # newcomers are exact copies of recently dead predators, so a crash does not
@@ -264,7 +269,9 @@ class PredSim(FastSim):
         sim.pred_pool = d.get("pred_pool")
         sim.pred_stats = d.get("pred_stats", dict(kills=0, attacks=0, births=0, deaths=0, immigrants=0))
         sim.pred_bank = d.get("pred_bank")
-        sim._pred_act_counts = np.zeros(P_OUT, np.int64)
-        sim._prev_pred_share = None
+        if getattr(sim, "_pred_act_counts", None) is None:  # older saves have no meter
+            sim._pred_act_counts = np.zeros(P_OUT, np.int64)
+        if not hasattr(sim, "_prev_pred_share"):
+            sim._prev_pred_share = None
         sim.pred_sense = None
         return sim

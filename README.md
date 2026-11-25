@@ -51,6 +51,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 |:-:|---|---|
 | ✅ | **Social sensing** | Real and used. Switching it off cuts eating on **10/10** seeds. |
 | ✅ | **Poison avoidance** | Real. Creatures learn to steer around hazards. |
+| ✅ | **Several ways to live** | With buried food reachable only by digging and a heritable digestion trade-off, digging evolved in **7/7** surviving worlds, and in **3/7** the population split into two coexisting groups (surface eaters and diggers) with matching behaviour, each dependent on its own food in lesion tests. Control: 0/10. |
 | ✅ | **Evolving predators** | A one-sided arms race. Predators keep getting better at hunting for a million ticks (**+46%**, 9/10 seeds; frozen predators: no gain). Prey evolve a real defence, reacting to predators they can sense (blinding them raises kills on 9/10 seeds), but still lose ground. |
 | ❌ | Two-symbol language | Not used, even in walled terrain. A 5-seed "hint" vanished at 10 seeds and at 1,000,000 ticks. |
 | ❌ | Communication (4 symbols) | Agents can signal, but nobody listens: removing signals changes nothing. |
@@ -73,7 +74,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] **Long runs:** 1,000,000 ticks with a novelty meter and family trees
 - [ ] **Worlds that push for novelty**
   - [x] ⚔️ An arms race: predators that evolve too *(first round done: one-sided race; next, give prey more ways to escape)*
-  - [ ] 🍄 Several ways to live: food types that need different skills
+  - [x] 🍄 Several ways to live: food types that need different skills *(first round: two-niche split on 3/7 worlds)*
   - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
 - [ ] Bigger brains, only where they're needed
 - [ ] Large many-seed sweeps
@@ -123,6 +124,8 @@ Defined in [`fast/modes.py`](fast/modes.py):
 | `sparse2_cofood` | Shared food in a sparse world |
 | `terrain_language` | Two-symbol language in a walled world |
 | `arms_race` | Predators that evolve vs predators that copy exactly |
+| `arms2b_shelter` | Evolving predators, with vs without shelters (round 2, fixed newcomer rule) |
+| `ways` | Buried food + digestion trade-off vs surface food only |
 </details>
 
 ## 🗂️ Repository

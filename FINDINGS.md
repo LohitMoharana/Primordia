@@ -998,3 +998,51 @@ Modes `arms2_shelter` (catch 0.2) and `arms2_shelter_c30` (catch 0.3), 10 seeds 
 - Calibration (seed 1, 22k ticks, both catch rates): both species coexist with boom-and-bust cycles; lowest prey count 91
   (shelters, catch 0.3), recovered. Laptop and cloud give the same population at tick 6,000 (863); resume works.
 - Worlds without shelters still reproduce the old engine bit for bit.
+
+## Arms race round 2: stopped (25 Nov 2026)
+
+Batch `arms2_shelter` stopped at ~150k-300k ticks: **7 of 20 worlds died out** (shelters 5, none 2), against 0/20 in round 1.
+Every death had the same shape: prey ran down to 1 while the floor kept 10 predators alive. The cause is the round-2 newcomer rule:
+newcomers copied from skilled recently-dead predators keep hunting at full skill when prey are scarce (round 1's random-brain
+newcomers were poor hunters, which accidentally let prey recover). Shelters did not protect prey. Round-2 data not used for verdicts.
+
+Fix, `arms2b_shelter`: one newcomer every 200 ticks while predators are below 10 (`immigrant_every=200`) and 2 energy per catch
+(was 3). Long tests (200k ticks, seeds 6 and 9, both arms, i.e. the seeds whose shelter worlds died in round 2):
+slow newcomers alone: all survived but prey minima 7-9; slow newcomers + 2 energy per catch: prey minima 41-197.
+
+## Engine: exact resume (25 Nov 2026)
+
+Found while testing: a resumed run never continued bit-for-bit (pre-existing). Saves packed agents into a dense pool, but a running
+pool has holes that newborns fill, and slot order decides who draws which random number. Saves now store each agent's slot and the pool
+size, plus the novelty/log counters, so a resumed run is byte-identical to an uninterrupted one (checked: saves and all logs, for
+sparse2_language, arms_race, arms2_shelter and ways, stopping mid-way between saves). Older saves still load (packed, as before).
+Also fixed: cofood.csv repeated its last row at the end of a run; log truncation on resume now writes the same line endings as csv.
+Earlier results are unaffected: resumes were statistically correct, just not bit-identical.
+
+## Several ways to live (25 Nov 2026, laptop, 100,000 ticks)
+
+Mode `ways` (`fast/ways.py`): sparse world v2 plus **buried food** in 6 fixed patches of rich soil, reached only by digging
+(the unused "mark" action), worth 1.0 per dig vs 0.5 per bite of surface food; sensed in inputs 150-174. Every creature carries a
+heritable **gut** g in [0,1] (mutation N(0, 0.05)): energy per unit surface food (1-g)^1.5, buried food 0.5 + 0.5 g^1.5.
+Founders: g uniform in [0, 0.2]. OFF arm: same gut trade-off, no buried food. 10 seeds per arm.
+(Calibration: with buried value g^q and no base, digger guts were eliminated in 2,000 ticks before digging could evolve,
+so the base 0.5 lets digging start; the gut then follows.)
+
+| | runs | digging evolved | split into two groups | all diggers | population at 100k |
+|---|---|---|---|---|---|
+| ON (buried food) | 7 survived (3 died founding, <24k) | 7/7, from 21k-30k ticks | **3/7** (seeds 1, 2, 5) | 4/7 (seeds 3, 4, 9, 10) | split ~3,070; all-diggers ~1,840 |
+| OFF | 10/10 | 0/10 | 0/10 | 0/10 | ~1,870 |
+
+Split = at least 10% surface specialists (g < 1/3) and at least 10% diggers (g > 2/3), averaged over the last 10 records.
+Split worlds hold ~40% surface specialists and ~60% diggers, and ~1.6x the population of the control (both niches filled).
+
+**Behaviour matches the gut** (300 ticks from the 100k save; `analyze_ways.py --tests`): share of actions that are digs,
+surface specialists vs diggers: seed 1 0.023 vs 0.465, seed 2 0.039 vs 0.467, seed 5 0.003 vs 0.468.
+**Lesions** (energy reset to 5, 300 ticks, dead count as 0): removing what digging yields drops diggers from 1.25/1.16/1.19 to
+0.17/0.12/0.15 and leaves surface specialists unchanged (0.80->0.88, 0.90->1.03, 1.20->1.23). Blinding creatures to buried food
+barely matters for diggers (1.25->1.12, 1.16->1.08, 1.19->1.16): rich soil is fixed, so diggers stay on it without needing to see the food.
+
+Verdict: **the first evolved split into two ways of life in Primordia.** With a second niche and a trade-off, digging evolved in
+every surviving world and in 3/7 the population divided into two coexisting specialist groups with different behaviour, each
+dependent on its own food (lesion-confirmed). Nothing about digging behaviour was scripted; the trade-off was.
+Open: whether the split worlds stay split (1M ticks), and why 4/7 went all-digger instead (likely the order in which niches filled).

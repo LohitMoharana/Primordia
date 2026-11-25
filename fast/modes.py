@@ -135,3 +135,31 @@ MODES.update({
     "arms2_shelter_c30": dict(name="42_arms2_shelter_c30", prefix="shelter", ticks=1000000, founders="stage5",
                               kw=lambda on: _arms2(shelter_frac=0.03 if on else 0.0, catch_p=0.3)),
 })
+
+# ---------------------------------------------------------------------------
+# SEVERAL WAYS TO LIVE (ways.py): sparse world v2 plus buried food in fixed patches of
+# rich soil, reached only by digging, and a heritable digestion trade-off (gut g:
+# surface (1-g)^1.5, buried 0.5 + 0.5 g^1.5). ON: buried food exists. OFF: same trade-off, no
+# buried food. Question: does the population split into surface eaters and diggers?
+WAYS = dict(SPARSE2, buried=True, buried_base=0.5, gut_init_max=0.2, gut_mut=0.05, gut_q=1.5)
+
+def _ways(**over):
+    d = dict(WAYS); d.update(over); return d
+
+MODES.update({
+    "ways": dict(name="50_ways", prefix="buried", ticks=100000, founders="stage5",
+                 kw=lambda on: _ways(buried=on)),
+})
+
+# ARMS RACE ROUND 2b: as round 2, but newcomers arrive slowly (one every 200 ticks while
+# predators are below 10) and a catch is worth 2 energy instead of 3, so a predator crash gives prey a breathing window instead of
+# keeping 10 skilled hunters on them (round 2 lost 6/20 worlds that way).
+ARMS2B = dict(ARMS2, immigrant_every=200, kill_gain=2.0)
+
+def _arms2b(**over):
+    d = dict(ARMS2B); d.update(over); return d
+
+MODES.update({
+    "arms2b_shelter": dict(name="43_arms2b_shelter", prefix="shelter", ticks=1000000, founders="stage5",
+                           kw=lambda on: _arms2b(shelter_frac=0.03 if on else 0.0)),
+})

@@ -219,6 +219,9 @@ class FastSim:
         self.last_sym2 = np.zeros(cap, np.int64)
         self.lineage = np.full(cap, -1, np.int64)  # id of the founding ancestor
 
+    # counters behind novelty.csv / log.csv (and subclasses' logs), saved with checkpoints
+    _METER = ["_act_counts", "_prev_share", "_complexity"]
+
     _FIELDS = ["alive", "x", "y", "energy", "age", "gen", "aid", "parent", "last_action",
                "w1", "b1", "w2", "b2", "wh", "hstate", "ws", "bs", "last_sym2", "lineage"]
 
@@ -409,6 +412,9 @@ class FastSim:
             X[:, P_PRED:P_PRED + 25] = sg.ravel()[flat] > 0
         if self._has_shelter:
             X[:, P_KIN:P_KIN + 25] = self.shelter.ravel()[flat] > 0
+        mg, has_mark = self._mark_slot_args()
+        if has_mark:
+            X[:, P_MARK:P_MARK + 25] = mg.ravel()[flat]
         X[:, P_EXTRA] = self.energy[idx] / MAX_ENERGY
         X[:, P_EXTRA + 1] = self.age[idx] / MAX_AGE
         return X
@@ -432,6 +438,8 @@ class FastSim:
         pre += np.einsum("ni,nih->nh", Xf[:, P_COFOOD:], w1[:, P_COFOOD:], optimize=False)
         if self._has_shelter:
             pre += np.einsum("ni,nih->nh", Xf[:, P_KIN:P_PRED], w1[:, P_KIN:P_PRED], optimize=False)
+        if self._mark_slot_args()[1]:
+            pre += np.einsum("ni,nih->nh", Xf[:, P_MARK:P_SIG2], w1[:, P_MARK:P_SIG2], optimize=False)
         if self.cfg.get("memory", False):
             pre += np.einsum("ni,nij->nj", self.hstate[:hi], self.wh[:hi], optimize=False)
         h = np.tanh(pre + self.b1[:hi])
@@ -520,7 +528,8 @@ class FastSim:
             gain = np.clip(avail - EAT_GAIN * rank, 0.0, EAT_GAIN)
             g = np.empty(len(eat))
             g[order] = gain
-            e[eat] += g
+            eff = self._eat_eff(idx)
+            e[eat] += g if eff is None else g * eff[eat]
             np.add.at(self.food.ravel(), cell, -g)
             np.maximum(self.food, 0, out=self.food)
 
@@ -541,6 +550,9 @@ class FastSim:
         e[self.hazard[self.x[idx], self.y[idx]] > 0] -= HAZARD_DRAIN
         np.minimum(e, MAX_ENERGY, out=e)
         dead = (e <= 0) | (self.age[idx] >= MAX_AGE)
+        dead_i = dead.astype(np.int64)
+        self._after_act(idx, act, x0, y0, e, keys, dead_i)
+        dead = dead_i == 1
         self.energy[idx] = e
         self.last_action[idx] = act
         self.alive[idx[dead]] = False
@@ -582,7 +594,8 @@ class FastSim:
                     self.w2, self.b2, r.random(n), MAX_ENERGY, float(MAX_AGE), act,
                     bool(self.cfg.get("memory", False)), self.wh, self.hstate,
                     sig2, self.ws, self.bs, r.random(n), SIG0, N_SYMBOLS, sym2,
-                    sg, bool(sg.any()), self.shelter, bool(self._has_shelter))
+                    sg, bool(sg.any()), self.shelter, bool(self._has_shelter),
+                    *self._mark_slot_args())
         self.last_sym2[idx] = sym2
         self._count_actions(act)
         keys = r.random(n)
@@ -595,7 +608,9 @@ class FastSim:
                   A["stay"], A["N"], A["S"], A["E"], A["W"], A["eat"], A["reproduce"], A["mate"],
                   A["mark"], A["share"], SIG0, N_SYMBOLS, IDLE_COST, MOVE_COST, SIGNAL_COST,
                   MARK_COST, EAT_GAIN, REPRODUCE_MIN_ENERGY, REPRODUCE_COST, SHARE_COST,
-                  SHARE_AMOUNT, HAZARD_DRAIN, MAX_ENERGY, MAX_AGE, rep, dead, recv, self.wall)
+                  SHARE_AMOUNT, HAZARD_DRAIN, MAX_ENERGY, MAX_AGE, rep, dead, recv, self.wall,
+                  self._eat_eff(idx))
+        self._after_act(idx, act, x0, y0, e, keys, dead)
         self.x[idx], self.y[idx] = xs, ys
         self.energy[idx] = e
         self.last_action[idx] = act
@@ -627,6 +642,23 @@ class FastSim:
 
     def _checkpoint_extra(self):
         return {}
+
+    # hooks for subclasses (ways.py); the defaults change nothing
+    def _mark_slot_args(self):
+        """Grid sensed in inputs 150-174 (the unused marker slot) and whether to read it."""
+        if getattr(self, "_zero_grid", None) is None:
+            self._zero_grid = np.zeros((self.size, self.size))
+        return self._zero_grid, False
+
+    def _eat_eff(self, idx):
+        """Energy per unit of surface food eaten, per agent in idx (None / ones = 1)."""
+        if self.use_numba:
+            return np.ones(len(idx))
+        return None
+
+    def _after_act(self, idx, act, x0, y0, e, keys, dead):
+        """Called after the action phase, before energies are written back (e, dead: local)."""
+        return None
 
     def _count_actions(self, act):
         if getattr(self, "_act_counts", None) is None:
@@ -682,7 +714,8 @@ class FastSim:
                   A["stay"], A["N"], A["S"], A["E"], A["W"], A["eat"], A["reproduce"], A["mate"],
                   A["mark"], A["share"], SIG0, N_SYMBOLS, IDLE_COST, MOVE_COST, SIGNAL_COST,
                   MARK_COST, EAT_GAIN, REPRODUCE_MIN_ENERGY, REPRODUCE_COST, SHARE_COST,
-                  SHARE_AMOUNT, HAZARD_DRAIN, MAX_ENERGY, MAX_AGE, rep, dead, recv)
+                  SHARE_AMOUNT, HAZARD_DRAIN, MAX_ENERGY, MAX_AGE, rep, dead, recv, self.wall,
+                  self._eat_eff(idx))
         self.x[idx], self.y[idx] = xs, ys
         self.energy[idx] = e
         self.last_action[idx] = act
@@ -757,7 +790,7 @@ class FastSim:
             a[m] += r.normal(0, MUT_STRENGTH, int(m.sum())).astype(a.dtype)
             return a
 
-        self.add_agents(self.x[par].copy(), self.y[par].copy(),
+        return self.add_agents(self.x[par].copy(), self.y[par].copy(),
                         mut(self.w1[par]), mut(self.b1[par]), mut(self.w2[par]),
                         mut(self.b2[par]), mut(self.wh[par]), ws=mut(self.ws[par]), bs=mut(self.bs[par]),
                         energy=np.full(n, REPRODUCE_COST * 0.5),
@@ -781,6 +814,11 @@ class FastSim:
             return
         idx = np.flatnonzero(self.alive)
         data = {k: getattr(self, k)[idx].copy() for k in self._FIELDS if k != "alive"}
+        # where each agent sits in the pool, and the pool size: newborns fill free slots,
+        # and slot order decides who draws which random number, so an exact resume needs it
+        data.update(slot=idx.copy(), cap=self.cap)
+        # running counters of the novelty meter and log, so a resumed run writes the same logs
+        data.update(meter={k: getattr(self, k) for k in self._METER if getattr(self, k, None) is not None})
         data.update(tick=self.tick, t=self.t, next_id=self.next_id, cfg=self.cfg, size=self.size,
                     food=self.food, hazard=self.hazard, cofood_grid=self.cofood_grid,
                     cofood_age=self.cofood_age, cofood_stats=self.cofood_stats,
@@ -814,11 +852,18 @@ class FastSim:
         sim.shelter = d["shelter"] if d.get("shelter") is not None else np.zeros_like(sim.food)
         sim._has_shelter = bool(sim.shelter.any())
         n = len(d["x"])
-        sim._alloc(max(256, int(n * 1.5)))
+        if "slot" in d:  # exact resume: same slots, same pool size
+            sim._alloc(int(d["cap"]))
+            pos = d["slot"]
+        else:  # older saves: packed pool (resumes correctly, but not bit-for-bit)
+            sim._alloc(max(256, int(n * 1.5)))
+            pos = np.arange(n)
         for k in cls._FIELDS:
             if k != "alive" and k in d:
-                getattr(sim, k)[:n] = d[k]
-        sim.alive[:n] = True
+                getattr(sim, k)[pos] = d[k]
+        sim.alive[pos] = True
+        for k, v in d.get("meter", {}).items():
+            setattr(sim, k, v)
         dd = np.arange(-SENSE_RADIUS, SENSE_RADIUS + 1)
         sim._ox, sim._oy = np.repeat(dd, 5), np.tile(dd, 5)
         sim.out_dir = out_dir
@@ -879,7 +924,8 @@ class FastSim:
     def _flush(self, rows):
         with open(self.log_path, "a", newline="") as f:
             csv.writer(f).writerows(rows)
-        if True:  # cofood.csv in both arms (OFF logs spawns only)
+        if getattr(self, "_cofood_logged", None) != self.tick:  # cofood.csv in both arms (OFF logs spawns only)
+            self._cofood_logged = self.tick  # once per tick (the final flush used to repeat the last row)
             path = os.path.join(self.out_dir, "cofood.csv")
             new = not os.path.exists(path)
             with open(path, "a", newline="") as f:
