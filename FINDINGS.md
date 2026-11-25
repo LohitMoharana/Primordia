@@ -1046,3 +1046,13 @@ Verdict: **the first evolved split into two ways of life in Primordia.** With a 
 every surviving world and in 3/7 the population divided into two coexisting specialist groups with different behaviour, each
 dependent on its own food (lesion-confirmed). Nothing about digging behaviour was scripted; the trade-off was.
 Open: whether the split worlds stay split (1M ticks), and why 4/7 went all-digger instead (likely the order in which niches filled).
+
+## Food storage: set-up (25 Nov 2026)
+
+Mode `storage` (`fast/storage.py`), the first "agents change the world" experiment: sparse world v2 with seasons (lean half-seasons).
+ON: the unused "mark" action puts up to 0.5 energy into the cell's store (keeping at least 1), the unused "mate" action takes up to 0.5
+back; stores persist after their maker leaves or dies, spoil 0.1% per tick, hold at most 20, are public (anyone can take), and are
+sensed in inputs 150-174. OFF: the same actions and costs, no effect. `storage.csv` logs stored energy, deposits, takes and how much of
+what was taken came back to the last depositor. `fast/analyze_storage.py --tests`: store/take rates in good vs lean halves of the
+season, and lesions (storage off + stores emptied; blind to stores) over 450 ticks with energy 5 and age 0.
+Checks: both arms survive 30k-tick calibration (seed 1); resume is byte-identical; other modes unchanged.

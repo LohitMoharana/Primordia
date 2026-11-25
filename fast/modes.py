@@ -163,3 +163,18 @@ MODES.update({
     "arms2b_shelter": dict(name="43_arms2b_shelter", prefix="shelter", ticks=1000000, founders="stage5",
                            kw=lambda on: _arms2b(shelter_frac=0.03 if on else 0.0)),
 })
+
+# ---------------------------------------------------------------------------
+# AGENTS CHANGE THE WORLD, part 1: FOOD STORAGE (storage.py). Sparse world v2 with
+# seasons (lean winters make saving worthwhile). ON: "mark" stores up to 0.5 energy in the
+# cell, "mate" takes up to 0.5 back; stores persist (spoil 0.1%/tick) and are sensed in
+# inputs 150-174. OFF: same actions and costs, no effect.
+STORE = dict(SPARSE2, storage=True, seasons=True)
+
+def _store(**over):
+    d = dict(STORE); d.update(over); return d
+
+MODES.update({
+    "storage": dict(name="60_storage", prefix="storage", ticks=100000, founders="stage5",
+                    kw=lambda on: _store(storage=on)),
+})
