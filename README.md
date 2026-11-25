@@ -62,6 +62,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
+| ❌ | **Image-model search for open-ended worlds** (ASAL, applied to evolving creatures) | Its top-rated world died out in **9/10** fresh runs and produced about a fifth of the lasting new strategies of the plain world (MODES, p = 0.0001). Picture novelty rewards boom-and-bust, not lasting evolution. Along the way it found three loopholes (near-dead, shrinking and crashing worlds all "look new"). |
 
 <p align="center">
   <img src="docs/img/evolution.png" alt="Over 1,000,000 ticks: founding families collapse to one, behaviour change slowly falls to about 0.03, population grows steadily" width="100%">
@@ -80,7 +81,8 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
   - [x] ⚔️ An arms race: predators that evolve too *(rounds 1 and 2b done: predators keep improving, prey don't keep up; placed shelters backfire)*
   - [x] 🍄 Several ways to live: food types that need different skills *(two-niche split on 3/7 worlds, stable to 1M ticks)*
   - [ ] 🏗️ Creatures that change the world: storing food, building, leaving lasting marks
-- [ ] Bigger brains, only where they're needed
+- [x] 📏 Measure open-endedness the published way: MODES (Dolson et al. 2019) and ASAL (Kumar et al. 2024) on Primordia
+- [ ] 🧠 Open brains: no fixed brain size (Soros & Stanley's condition 4), measured with MODES *(running)*
 - [ ] Large many-seed sweeps
 - [ ] 🌐 3D
 

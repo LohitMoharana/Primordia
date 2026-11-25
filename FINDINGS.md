@@ -1163,3 +1163,73 @@ Compared with Lenski et al. (EQU in 23/50 populations with simpler functions rew
 direction but much weaker. Likely reason: our "complex" behaviour is one action repeated 4 times, which a reactive brain can do by
 simply digging whenever it senses buried food; EQU needs several different operations in the right order. Next (our twist): a
 sequence of different actions (e.g. dig, stay, dig, eat), where each step really is a new skill.
+
+## Measuring open-endedness the published way: MODES (25 Nov 2026)
+
+Up to now "is anything new happening?" was our own novelty meter. From here on we use the field's standard:
+MODES (Dolson, Vostinar, Wiser & Ofria 2019, *Artificial Life* 25(1)), ported step by step from the reference
+code (OEETracker in Empirical, `include/emp/Evolve/OEE.hpp`) into `fast/oee_modes.py`. Every 500 ticks the living
+creatures are snapshotted; a **persistence filter** keeps only those from 5,000 ticks ago (~25 generations) that
+still have living descendants; on what survives the filter: **change** (kinds not in the previous filtered set),
+**novelty** (kinds never seen before), **diversity** (Shannon entropy, bits), **complexity** (most complex kind).
+
+What MODES leaves to each system, and what we chose:
+- **taxon** = one creature (weights are continuous, every birth is a new genotype); family tree from birth records.
+- **skeleton** (what counts as a "kind") = a behavioural strategy: the brain is shown 32 fixed situations
+  (`fast/probe_inputs.npy`: 16 ordinary, 12 dangerous, 4 with a predator next to it), its most likely action is
+  sorted into 8 kinds, and the skeleton is the kind it picks most in each of the 3 contexts (512 possible).
+  Chosen by heritability: children keep their parent's skeleton in 70% of births, against 5% for the full
+  32-situation fingerprint (which mostly measured mutation noise: change = novelty = number of lineages).
+- **complexity** = how many different kinds of action the strategy uses (1-3). Capped by construction.
+
+## ASAL on Primordia: an image model searching for open-ended worlds (25 Nov 2026)
+
+ASAL (Kumar et al. 2024, github.com/SakanaAI/asal) searches the settings of a simulation with Sep-CMA-ES and
+scores each run with CLIP: a run is open-ended if its pictures keep looking unlike any earlier picture. It was
+shown on Lenia, Boids, Game of Life, particle systems; never on a world of evolving creatures. Our port
+(`fast/asal_*.py`): ASAL's four scores reproduce their code to 6 decimals; the search space is the kind of world
+(14 settings: food clusters, drift, seasons, poison, buried food, predators, shelters, digestion trade-off);
+also illumination (`asal_illuminate.py`) and the ASAL++ evolver loop (`asal_evolve.py`, Baid et al. 2025).
+
+**Three loopholes, found one after another in testing** (each now fixed in the scoring):
+1. *Near-dead worlds win*: a few scattered dots look different in every picture. Fix: pictures of the creatures
+   only (where they stand; where their genes put them), and a noise floor: two random halves of the creatures are
+   pictured at every moment, and a moment only counts as new by how much further it is from every earlier moment
+   than its own halves are from each other.
+2. *Shrinking worlds win*: ever-thinner pictures look new. Fix: every picture shows the same number of creatures
+   (100 per half); below 200 creatures a world counts as collapsed. Check: dying worlds then scored 0.000-0.0015,
+   healthy ones 0.0024-0.0078.
+3. *Predator crashes win*: a population being eaten changes a lot on the way down. Fix: a run that collapses scores
+   zero. (Also a 3,000-tick settling period, and searches start from a world known to be healthy.)
+
+**Test against MODES** (`modes_compare.py`, 10 fresh seeds per world, 100,000 ticks). The search was stopped after
+4 generations (64 worlds, each watched for 20,000 ticks); its best world (6 food clusters, rich; 6 predators; a
+little poison) against the search's healthy starting world (13 clusters, buried food, no predators):
+
+| | survived | MODES novelty (new lasting strategies) | change per snapshot | diversity (bits) | novelty per snapshot alive |
+|---|---|---|---|---|---|
+| plain starting world | **10/10** (3,700-4,600 creatures) | **65.6** | **2.27** | **2.75** | **0.35** |
+| image search's best | 1/10 (152 creatures) | 13.8 | 0.76 | 0.86 | 0.18 |
+
+All differences p = 0.0001 (permutation test). The world the image model rated *most* open-ended dies out in 9/10
+runs within 14k-65k ticks, and while alive produces about half as many lasting new strategies. In this world,
+picture novelty rewards dramatic short-term change (predator-prey swings before a crash), not lasting evolution.
+Limits: a short search (4 of 60 generations), each world watched only 20,000 ticks, one skeleton definition. The
+honest claim: a short ASAL-style search picked a boom-and-bust world that the field's own measure rejects. For
+any further search, the score should be MODES, not pictures.
+
+## Open brains: Soros & Stanley's condition 4 (25 Nov 2026): set-up
+
+Soros & Stanley (2014) proposed four necessary conditions for open-ended evolution; their world Chromaria
+stagnated when any one was removed. Primordia meets (1) a non-trivial test to reproduce and (3) individuals decide
+how to act, weakly meets (2) evolution creating new opportunities (predators, digging, building), and fails (4):
+"the potential complexity of the phenotype should not be limited by its representation" (every brain: 24 hidden
+units, 14 actions, fixed senses). Taylor (2015) and Channon's Geb (the first system to pass Bedau's test; variable-
+size genomes) point the same way. This is the controlled test, mode `open_brains`:
+- ON: brain size is heritable with no fixed limit (`brain_open`: weight arrays widened on demand; safety ceiling
+  128 units); size changes by one unit in 10% of births; each unit costs energy (relative to the founders' 24).
+- OFF: identical size changes and costs, but units beyond the founders' 24 are never wired in.
+- World: the healthy starting world plus 40 evolving predators (catch chance 0.1), working memory on (unwired at
+  the start), gifts break even. A first version on the several-ways-to-live world died out in 6/6 runs (without
+  the 2x gift loophole that world has too little food) and was discarded.
+- 10 seeds per arm, 100,000 ticks, measured with MODES plus brain sizes (everyone; roots of persistent lineages).
