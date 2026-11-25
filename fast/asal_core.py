@@ -22,6 +22,8 @@ Added for a world of evolving creatures (not in either project):
   - every picture shows the same number of creatures (two samples of 100), so a growing
     or shrinking population cannot look like change (found in testing: without this,
     dying worlds won, because ever-thinner pictures look new);
+  - a run that collapses, dies out or explodes scores zero open-endedness (a crash changes
+    the picture a lot on the way down; found in testing, predator crashes won);
   - a 3000-tick settling period (only extinction counts, no pictures); after it,
     collapse (< 200 creatures) and explosion freeze a world (no new pictures), so they earn nothing.
 """
@@ -199,6 +201,10 @@ def evaluate(pool, clip, U, seeds, ticks, every, pop_cap=12000, min_pop=200, bur
             r = res[i * nb + j]
             z = embed_run(clip, r)
             l, p = score(z, **score_kw)
+            if score_kw.get("objective", "open") == "open" and r["status"] != "ok":
+                # a world that dies or collapses is not open-ended, however much it changed on the way
+                # down (found in testing: predator crashes scored as novelty)
+                l = 0.0
             ls.append(l); ps.append(p)
             if j == 0:
                 firsts.append((r, z))
