@@ -1146,3 +1146,20 @@ Mode `steps`: buried food pays in full only to a creature that digs 4 times in a
 OFF: only the full sequence pays. No digestion trade-off; buried food sensed on a 0-1 scale (see correction above).
 Calibration: ON seed 2: completed sequences 0 (5k) -> 2 (10k) -> 316 (15k) -> 2,932 per 5k ticks (20k); an earlier full-scale test
 reached ~75-80k completions per 5k ticks by 55-80k. OFF seed 3: 0-14 per 5k ticks (chance) to 25k.
+
+## Replication 1, stepping stones: results (25 Nov 2026, 100k ticks, 10 seeds per arm)
+
+Full sequence = at least 100 completed 4-dig sequences per 1,000 ticks over the last 10 records.
+
+| | survived | full sequence evolved | first reached 100/1k ticks | completions per 1k ticks at end | population |
+|---|---|---|---|---|---|
+| ON (each step pays 1/4) | 10/10 | **10/10** | 15k-38k (median 28k) | 12,200-17,500 | ~3,450 |
+| OFF (only the full sequence pays) | 10/10 | **6/10** (one weak: 224/1k) | 16k-65k (median ~37k) | 22,300-35,500 where evolved; 1-18 where not | ~1,850 |
+
+One-sided Fisher exact, 10/10 vs 6/10: p ~0.04. With stepping stones the sequence evolved every time and sooner; without them it
+evolved in 6/10 and later, and in 4/10 never. Where it did evolve without stepping stones, creatures complete more sequences (nothing
+pays for stopping half-way), but ON worlds hold nearly twice as many creatures (the partial payoffs feed them).
+Compared with Lenski et al. (EQU in 23/50 populations with simpler functions rewarded, 0/50 without), the effect is the same in
+direction but much weaker. Likely reason: our "complex" behaviour is one action repeated 4 times, which a reactive brain can do by
+simply digging whenever it senses buried food; EQU needs several different operations in the right order. Next (our twist): a
+sequence of different actions (e.g. dig, stay, dig, eat), where each step really is a new skill.
