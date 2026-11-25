@@ -75,8 +75,12 @@ if ck:
     _has_pred, _has_ways, _has_store = "pred" in _d, "buried" in _d, "store" in _d
     _has_build = "build_marker" in _d
     _has_brain = "brain_marker" in _d
+    _has_actions = "mac" in _d
     del _d
-    if _has_brain:
+    if _has_actions:
+        from actions import WaysActionSim, PredActionSim
+        sim = (WaysActionSim if _has_ways else PredActionSim).from_checkpoint(path, out_dir=a.out_dir)
+    elif _has_brain:
         from brains import WaysBrainSim, PredBrainSim
         sim = (WaysBrainSim if _has_ways else PredBrainSim).from_checkpoint(path, out_dir=a.out_dir)
     elif _has_build:
@@ -112,6 +116,9 @@ else:
     if a.engine == "torch":
         from engine_torch import TorchSim
         sim = TorchSim(seed=a.seed, out_dir=a.out_dir, founders=F, device=a.device, **kw)
+    elif "actions_evolve" in kw:
+        from actions import WaysActionSim, PredActionSim
+        sim = (WaysActionSim if "buried" in kw else PredActionSim)(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)
     elif "brain_evolve" in kw:
         from brains import WaysBrainSim, PredBrainSim
         sim = (WaysBrainSim if "buried" in kw else PredBrainSim)(seed=a.seed, out_dir=a.out_dir, founders=F, **kw)

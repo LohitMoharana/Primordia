@@ -305,3 +305,18 @@ MODES.update({
     "open_brains": dict(name="96_open_brains", prefix="brain", ticks=100000, founders="stage5",
                         kw=lambda on: dict(OPEN, brain_wired=on)),
 })
+
+# ---------------------------------------------------------------------------
+# EVOLVABLE ACTIONS (Soros & Stanley condition 4 again, Taylor 2015 "individuals capable of producing
+# more complex offspring"). Open brains showed brain size is not the limit; the fixed repertoire of
+# 14 actions might be. ON: creatures can evolve their own actions, chains of 2-8 basic actions
+# (new, duplicated, edited, deleted by mutation; actions.py). OFF: the same chains evolve and cost
+# the same, but the brain can never choose them. Same world as open brains, fixed brain size.
+ACT = dict(OPEN_WORLD, predators=True, n_pred=40, pred_delay=3000, catch_p=0.1, kill_gain=2.0,
+           pred_evolve=True, pred_immigrants="bank", immigrant_every=200,
+           memory=True, zero_memory_weights=True, actions_evolve=True)
+
+MODES.update({
+    "actions": dict(name="97_actions", prefix="actions", ticks=100000, founders="stage5",
+                    kw=lambda on: dict(ACT, actions_wired=on)),
+})

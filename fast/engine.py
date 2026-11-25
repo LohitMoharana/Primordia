@@ -498,6 +498,7 @@ class FastSim:
             pq = np.exp((lg - lg.max(1, keepdims=True)).astype(np.float64)); pq /= pq.sum(1, keepdims=True)
             sym2[sg] = np.minimum((np.cumsum(pq, 1) < u2[sg, None]).sum(1), N_SYMBOLS - 1) + 1
         self.last_sym2[idx] = sym2
+        act = self._choose_actions(idx, act)
         self._count_actions(act)
         # random numbers for this tick's action phase, drawn the same way on both paths
         keys = r.random(n)   # eating order inside a shared cell
@@ -602,6 +603,7 @@ class FastSim:
                     sg, bool(sg.any()), self.shelter, bool(self._has_shelter),
                     *self._mark_slot_args(), *self._nact_args())
         self.last_sym2[idx] = sym2
+        act = self._choose_actions(idx, act)
         self._count_actions(act)
         keys = r.random(n)
         su = r.random(n)
@@ -639,6 +641,10 @@ class FastSim:
         if len(r_):
             self._spawn_children(idx[r_])
         self.tick += 1
+
+    def _choose_actions(self, idx, act):
+        """Hook between the brain's choice and the action phase (evolvable actions, actions.py)."""
+        return act
 
     def _pred_slot_grid(self):
         """What agents sense in inputs 125-149: walls (terrain) and/or predators (predators.py)."""

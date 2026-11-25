@@ -26,7 +26,9 @@ What each system must define (the paper leaves it to the system):
             4 with a predator next to it); its most likely action is sorted into 8 kinds (stay,
             move, eat, reproduce, signal, share, mate, mark/dig); the skeleton is the kind it
             picks most in each of the 3 contexts (see skeletons() for why this resolution).
-  complexity  how many different kinds of action the strategy uses (1-3).
+  complexity  steps of behaviour in the strategy: each different basic kind counts 1; in worlds
+            with evolvable actions (actions.py) each different evolved action chain is its own
+            kind (coded by its content) and counts its length.
 """
 import math
 import os
@@ -51,25 +53,57 @@ def skeletons(sim, idx, probes):
     Chosen by heritability: in a test population a child kept its parent's skeleton in 70% of
     births (the engine's mutation changes 10% of all weights), against 5% for the full 32-situation
     fingerprint, so mutation noise is mostly left out, as MODES' skeletonisation intends."""
-    a = actions(sim, idx, probes)
-    out = np.zeros((len(idx), len(CONTEXTS)), np.int8)
+    raw = actions(sim, idx, probes, raw=True)
+    if raw.max(initial=0) < len(ACTION_KIND):  # no evolved actions in use: the 8 kinds
+        a = ACTION_KIND[raw]
+        out = np.zeros((len(idx), len(CONTEXTS)), np.int64)
+        for j, sl in enumerate(CONTEXTS):
+            c = np.stack([(a[:, sl] == k).sum(1) for k in range(len(KIND_NAMES))], 1)
+            out[:, j] = c.argmax(1)
+        return out
+    # evolved actions (actions.py): a creature using one of its own action chains is coded by the
+    # chain's content, so different chains are different kinds of behaviour
+    code = np.where(raw < len(ACTION_KIND), ACTION_KIND[np.minimum(raw, len(ACTION_KIND) - 1)], 0).astype(np.int64)
+    rows, cols = np.nonzero(raw >= len(ACTION_KIND))
+    for i, q in zip(rows, cols):
+        k = raw[i, q] - len(ACTION_KIND)
+        steps = sim.mac[idx[i], k, :sim.mac_len[idx[i], k]]
+        code[i, q] = MACRO_BASE + int(sum(int(st + 1) * 15 ** p for p, st in enumerate(steps)))
+    out = np.zeros((len(idx), len(CONTEXTS)), np.int64)
     for j, sl in enumerate(CONTEXTS):
-        c = np.stack([(a[:, sl] == k).sum(1) for k in range(len(KIND_NAMES))], 1)
-        out[:, j] = c.argmax(1)
+        for i in range(len(idx)):
+            v, c = np.unique(code[i, sl], return_counts=True)
+            out[i, j] = v[np.argmax(c)]  # most chosen; ties: lowest code (as argmax above)
     return out
 
 
-def actions(sim, idx, probes):
-    """Most likely action kind of creatures idx in each probe situation (n x 32)."""
+MACRO_BASE = 100  # skeleton codes >= this are evolved action chains (actions.py)
+
+
+def actions(sim, idx, probes, raw=False):
+    """Most likely action of creatures idx in each probe situation (n x 32): its kind, or with
+    raw=True the output index itself (>= 14: an evolved action chain)."""
     X = probes.astype(np.float64)                                   # K x I
     h = np.tanh(np.einsum("ki,nih->nkh", X, sim.w1[idx].astype(np.float64)) + sim.b1[idx][:, None, :])
     out = np.einsum("nkh,nho->nko", h, sim.w2[idx].astype(np.float64)) + sim.b2[idx][:, None, :]
-    return ACTION_KIND[out.argmax(-1)].astype(np.int8)               # n x K
+    a = out.argmax(-1)
+    return a if raw else ACTION_KIND[np.minimum(a, len(ACTION_KIND) - 1)].astype(np.int8)  # n x K
 
 
 def complexity(skel):
-    """Repertoire: how many different kinds of action the strategy uses across the 3 contexts."""
-    return len(set(skel.tolist()))
+    """How many steps of behaviour the strategy uses across the 3 contexts: each different basic
+    kind counts 1, each different evolved chain counts its length (so this can grow with chains)."""
+    tot = 0
+    for v in set(skel.tolist()):
+        if v < MACRO_BASE:
+            tot += 1
+        else:
+            x, n = v - MACRO_BASE, 0
+            while x:
+                x //= 15
+                n += 1
+            tot += n
+    return tot
 
 
 def entropy_bits(counts):
@@ -91,6 +125,7 @@ class ModesTracker:
         self.rows = []            # (time, change, novelty, diversity, complexity, filter on)
         self.brain_rows = []      # (time, mean units, max units, mean units of persistent roots)
         self.units = {}           # creature id -> brain units (worlds with evolving brain size)
+        self.macro_rows = []      # (time, macro statistics) in worlds with evolvable actions
 
     def attach(self, sim):
         idx = np.flatnonzero(sim.alive)
@@ -110,7 +145,7 @@ class ModesTracker:
         if sim.tick % self.resolution:
             return
         idx = np.flatnonzero(sim.alive)
-        sk = skeletons(sim, idx, self.probes) if len(idx) else np.zeros((0, len(self.probes)), np.int8)
+        sk = skeletons(sim, idx, self.probes) if len(idx) else np.zeros((0, len(CONTEXTS)), np.int64)
         self.snapshots.append((sim.tick, {int(a): s.tobytes() for a, s in zip(sim.aid[idx], sk)}))
         if hasattr(sim, "nact"):
             # remember brain sizes only for creatures in kept snapshots (bounded memory)
@@ -154,8 +189,10 @@ class ModesTracker:
             if s not in self.seen:
                 novelty += 1
                 self.seen.add(s)
-            most = max(most, complexity(np.frombuffer(s, np.int8)))
+            most = max(most, complexity(np.frombuffer(s, np.int64)))
         self.rows.append((sim.tick, change, novelty, div, most, active))
+        if hasattr(sim, "macro_summary"):
+            self.macro_rows.append((sim.tick, sim.macro_summary()))
         if hasattr(sim, "nact"):  # brain sizes: everyone alive, and the persistent lineages' roots
             idx = np.flatnonzero(sim.alive)
             na = sim.nact[idx]
@@ -173,6 +210,11 @@ class ModesTracker:
         a = np.array([x[1:5] for x in r], float)
         out = dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
                    diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))
+        if self.macro_rows:
+            m = [x[1] for x in self.macro_rows]
+            out.update(macros_owned=m[-1]["macros_owned"], macro_len_mean=m[-1]["macro_len_mean"],
+                       macro_len_max=max(x["macro_len_max"] for x in m),
+                       macro_share=float(np.mean([x["macro_share"] for x in m[len(m) // 2:]])))
         if self.brain_rows:
             b = self.brain_rows[-1]
             out.update(units_mean=b[1], units_max=b[2], units_persistent=b[3])

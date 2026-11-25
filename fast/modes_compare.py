@@ -31,7 +31,8 @@ import asal_world as AW
 import oee_modes as M
 
 METRICS = ["change", "novelty", "diversity", "complexity",
-           "units_mean", "units_max", "units_persistent"]  # brain units: worlds with evolving brain size only
+           "units_mean", "units_max", "units_persistent",   # brain units: worlds with evolving brain size only
+           "macros_owned", "macro_len_mean", "macro_len_max", "macro_share"]  # evolvable actions only
 
 
 def make_world(spec, seed):
@@ -41,7 +42,10 @@ def make_world(spec, seed):
         from modes import MODES
         kw = MODES[name]["kw"](arm == "on")
         F = AW._founders(seed)
-        if "brain_evolve" in kw:
+        if "actions_evolve" in kw:
+            from actions import PredActionSim, WaysActionSim
+            cls = WaysActionSim if "buried" in kw else PredActionSim
+        elif "brain_evolve" in kw:
             from brains import PredBrainSim, WaysBrainSim
             cls = WaysBrainSim if "buried" in kw else PredBrainSim
         elif "buried" in kw:
