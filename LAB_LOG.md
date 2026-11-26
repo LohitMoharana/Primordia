@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 20:44 IST
+
+**Running:** shaken world, 110 min in; 16 of 20 runs done (all alive), last 4 shaken runs still going.
+Provisional (10 vs 6 runs): shaking the best world halves lasting novelty per 1000 creatures (13.9 vs 27.3),
+lowers total novelty (113.7 vs 182.8) and diversity (2.75 vs 3.80), all p = 0.0004, although the shaken world
+holds more creatures (8,190 vs 6,700). Same direction as Rainey & Travisano 1998. Final numbers in the next entry.
+
 ## 2026-11-26 19:45 IST
 
 **Running:** shaken world (Rainey & Travisano), 51 min in, no runs finished yet (all 20 run at once; the
