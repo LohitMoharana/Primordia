@@ -320,3 +320,18 @@ MODES.update({
     "actions": dict(name="97_actions", prefix="actions", ticks=100000, founders="stage5",
                     kw=lambda on: dict(ACT, actions_wired=on)),
 })
+
+# ---------------------------------------------------------------------------
+# REMAINS (Soros & Stanley condition 2: evolution should create new opportunities). Neither brain
+# size nor the action repertoire was the limit. Here the second food exists only because of other
+# creatures: bodies of the dead become food where they died (eco.py; eaten with the dig action and
+# digested with the gut trade-off, so scavenging is a way of life). ON: remains where creatures die.
+# OFF (matched control): the same amount every tick, on random cells. Same world as open brains
+# (no soil: nothing else makes this food), fixed brains and actions.
+REMAINS = dict(OPEN_WORLD, predators=True, n_pred=40, pred_delay=3000, catch_p=0.1, kill_gain=2.0,
+               pred_evolve=True, pred_immigrants="bank", immigrant_every=200)
+
+MODES.update({
+    "remains": dict(name="98_remains", prefix="remains", ticks=100000, founders="stage5",
+                    kw=lambda on: dict(REMAINS, remains_source="bodies" if on else "random")),
+})

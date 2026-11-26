@@ -126,6 +126,7 @@ class ModesTracker:
         self.brain_rows = []      # (time, mean units, max units, mean units of persistent roots)
         self.units = {}           # creature id -> brain units (worlds with evolving brain size)
         self.macro_rows = []      # (time, macro statistics) in worlds with evolvable actions
+        self.eco_rows = []        # (time, remains statistics) in worlds with remains (eco.py)
 
     def attach(self, sim):
         idx = np.flatnonzero(sim.alive)
@@ -191,6 +192,12 @@ class ModesTracker:
                 self.seen.add(s)
             most = max(most, complexity(np.frombuffer(s, np.int64)))
         self.rows.append((sim.tick, change, novelty, div, most, active))
+        if hasattr(sim, "eco_summary"):
+            d = sim._dig_counts - getattr(self, "_dig0", 0)
+            self._dig0 = sim._dig_counts
+            es = sim.eco_summary()
+            es["dig_rate"] = d / max(1, self.resolution * max(1, len(alive_now)))
+            self.eco_rows.append((sim.tick, es))
         if hasattr(sim, "macro_summary"):
             self.macro_rows.append((sim.tick, sim.macro_summary()))
         if hasattr(sim, "nact"):  # brain sizes: everyone alive, and the persistent lineages' roots
@@ -210,6 +217,12 @@ class ModesTracker:
         a = np.array([x[1:5] for x in r], float)
         out = dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
                    diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))
+        if self.eco_rows:
+            m = [x[1] for x in self.eco_rows]
+            late = m[len(m) // 2:]
+            out.update(scavengers=m[-1]["scavengers"], gut_mean=m[-1]["gut_mean"],
+                       dig_rate=float(np.mean([x["dig_rate"] for x in late])),
+                       remains_left=float(np.mean([x["remains_total"] for x in late])))
         if self.macro_rows:
             m = [x[1] for x in self.macro_rows]
             out.update(macros_owned=m[-1]["macros_owned"], macro_len_mean=m[-1]["macro_len_mean"],

@@ -32,7 +32,8 @@ import oee_modes as M
 
 METRICS = ["change", "novelty", "diversity", "complexity",
            "units_mean", "units_max", "units_persistent",   # brain units: worlds with evolving brain size only
-           "macros_owned", "macro_len_mean", "macro_len_max", "macro_share"]  # evolvable actions only
+           "macros_owned", "macro_len_mean", "macro_len_max", "macro_share",  # evolvable actions only
+           "scavengers", "gut_mean", "dig_rate", "remains_left"]  # remains worlds only
 
 
 def make_world(spec, seed):
@@ -42,7 +43,9 @@ def make_world(spec, seed):
         from modes import MODES
         kw = MODES[name]["kw"](arm == "on")
         F = AW._founders(seed)
-        if "actions_evolve" in kw:
+        if "remains_source" in kw:
+            from eco import EcoSim as cls
+        elif "actions_evolve" in kw:
             from actions import PredActionSim, WaysActionSim
             cls = WaysActionSim if "buried" in kw else PredActionSim
         elif "brain_evolve" in kw:
