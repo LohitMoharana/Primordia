@@ -1,0 +1,16 @@
+=== 2026-11-26 07:09:39 start: C:\Users\lohit\AppData\Local\Programs\Python\Python311\python.exe D:\Projects\Personal\Primordia\fast\modes_search.py --out fast/runs/modes_search --gens 24 --popsize 16 --jobs 16 --ticks 40000
+gen 1/24  best novelty 71  median 25  survived 15/16  all-time 71  12 min
+gen 2/24  best novelty 67  median 25  survived 14/16  all-time 71  11 min
+gen 3/24  best novelty 81  median 39  survived 16/16  all-time 81  12 min
+gen 4/24  best novelty 75  median 25  survived 16/16  all-time 81  12 min
+   search centre: 19 food clusters x1.94, drift 0.063, cluster life 650, seasons 0.26/1373, poison 0.008, 5 buried patches (base 0.85), no predators, no shelters, gut q 1.50
+gen 5/24  best novelty 85  median 44  survived 16/16  all-time 85  15 min
+gen 6/24  best novelty 100  median 66  survived 15/16  all-time 100  15 min
+gen 7/24  best novelty 130  median 52  survived 15/16  all-time 130  16 min
+gen 8/24  best novelty 110  median 58  survived 16/16  all-time 130  17 min
+   search centre: 15 food clusters x1.76, drift 0.028, cluster life 1262, seasons 0.12/1478, poison 0.018, 7 buried patches (base 1.00), 6 predators (catch 0.06, gain 1.9), shelters 0.006, gut q 1.65
+gen 9/24  best novelty 91  median 58  survived 16/16  all-time 130  19 min
+gen 10/24  best novelty 105  median 53  survived 15/16  all-time 130  18 min
+gen 11/24  best novelty 99  median 72  survived 15/16  all-time 130  20 min
+gen 12/24  best novelty 133  median 68  survived 16/16  all-time 133  22 min
+   search centre: 11 food clusters x2.00, drift 0.011, clusters permanent, no seasons, poison 0.014, 5 buried patches (base 1.00), no predators, shelters 0.014, gut q 1.78
