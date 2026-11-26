@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 21:44 IST
+
+**Running:** switching world (Kashtan & Alon 2005), 46 min in, 1 of 30 runs done (switching every 5000 ticks:
+105 lasting new strategies, 29.5 per 1000 creatures, 3,560 creatures; one run, too early to compare). Expected
+end ~00:30-01:30; then the 4x world (~13:00 tomorrow).
+
 ## 2026-11-26 21:41 IST
 
 **Finished:** shaken world, all 20 runs: lasting novelty per 1000 creatures 15.3 vs 27.3 (p = 0.0001), total
