@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 16:38 IST
+
+**Running:** fresh-seed check (66 min in). The 10 plain-world runs are done and reproduce the earlier numbers
+exactly (65.6 lasting new strategies, 20.2 per 1000 creatures; the engine is deterministic per seed). The
+search's two worlds (final best, ~7,000 creatures; per-creature best, ~1,400) are still running: bigger
+populations run slower. Expected: 17:30-18:00.
+
 ## 2026-11-26 15:35 IST
 
 **Finished:** remains test (condition 2): no effect (novelty 27.4 vs 24.6, p = 0.51), no scavengers evolved;
