@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 19:45 IST
+
+**Running:** shaken world (Rainey & Travisano), 51 min in, no runs finished yet (all 20 run at once; the
+best world holds ~6,700 creatures, so each 100k-tick run takes about 1.5 h). Expected ~21:00. Then the
+switching world, then the 4x world overnight.
+
 ## 2026-11-26 19:05 IST
 
 **Finished:** separate habitats. Separation: no effect per creature (p = 0.77). Harsher digestion trade-off:
