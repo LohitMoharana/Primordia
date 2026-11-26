@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 14:55 IST
+
+**Finished:** MODES-scored world search, 24 generations (384 worlds, 40,000 ticks each, ~7.5 h). Median
+lasting novelty per world rose from 25 (generation 1) to 92 (generation 24); 16/16 worlds survived in each
+of the last 13 generations. Best: 153 (generation 22). Full record in `results/modes_search/`.
+**Running:** remains test (condition 2), started 14:46.
+
 ## 2026-11-26 14:35 IST
 
 **Running:** MODES-scored world search, last generation (24 of 24, ~25 min). Generation 22 set a new best,

@@ -27,3 +27,6 @@ gen 20/24  best novelty 108  median 74  survived 15/16  all-time 133  18 min
 gen 21/24  best novelty 120  median 89  survived 16/16  all-time 133  22 min
 gen 22/24  best novelty 153  median 98  survived 16/16  all-time 153  25 min
 gen 23/24  best novelty 149  median 81  survived 16/16  all-time 153  24 min
+gen 24/24  best novelty 127  median 92  survived 16/16  all-time 153  25 min
+   search centre: 18 food clusters x2.00, drift 0.000, cluster life 2539, no seasons, poison 0.007, 8 buried patches (base 1.00), 5 predators (catch 0.07, gain 1.0), no shelters, gut q 1.54
+=== 2026-11-26 14:46:42 exit code 0 after 457 min
