@@ -3,6 +3,14 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 14:35 IST
+
+**Running:** MODES-scored world search, last generation (24 of 24, ~25 min). Generation 22 set a new best,
+**153** lasting new strategies (diversity 3.53 bits, ~6,900 creatures): 14 permanent food clusters, 10 rich
+buried-food patches, a little poison, 7 gentle predators, a few shelters. Medians: 98 (gen 22, highest
+so far) and 81 (gen 23); 16/16 worlds survived in both. Search ends ~15:00; then the queue runs remains,
+the fresh-seed check (final best, per-creature best from gen 6, plain world), shaken, switching, 4x.
+
 ## 2026-11-26 13:35 IST
 
 **Running:** MODES-scored world search, generation 22 of 24. Median lasting novelty: 60, 74, **89** in
