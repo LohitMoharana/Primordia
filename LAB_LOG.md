@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 21:41 IST
+
+**Finished:** shaken world, all 20 runs: lasting novelty per 1000 creatures 15.3 vs 27.3 (p = 0.0001), total
+125.7 vs 182.8 (p = 0.0003), diversity 3.04 vs 3.80 (p = 0.0016). Written into FINDINGS.md and README (✅).
+**Running:** switching world (Kashtan & Alon), started 20:57; 1 of 30 runs done.
+
 ## 2026-11-26 20:44 IST
 
 **Running:** shaken world, 110 min in; 16 of 20 runs done (all alive), last 4 shaken runs still going.

@@ -1344,3 +1344,21 @@ population and so the total (p = 0.009). The harsher trade-off raises novelty pe
 ((2) vs (3): 34.0 vs 27.3, p = 0.0002) but lowers the total and the diversity (p = 0.0008, 0.0007), because the
 population is smaller. A trade-off rather than a free gain: making each way of life costlier makes each lineage
 more inventive, but fewer creatures and fewer coexisting strategies result.
+
+## ✅ Spatial structure drives lasting novelty: the shaken world (26 Nov 2026, 100k ticks, 10 seeds per arm)
+
+After Rainey & Travisano (1998, *Nature*): bacteria in a still, structured flask diversified into many types;
+shaking the flask destroyed that diversity. Here: the search's best world, against the same world with all
+surface and buried food moved to random cells every tick (`asal_world._shaken`): the same food, but no stable
+places to adapt to.
+
+| | survived | MODES novelty | novelty per 1000 creatures | diversity | change | creatures |
+|---|---|---|---|---|---|---|
+| structured (best world) | 10/10 | **182.8** | **27.3** | **3.80** | **8.33** | 6,700 |
+| shaken | 10/10 | 125.7 +- 27.6 | 15.3 +- 3.3 | 3.04 | 5.62 | 8,210 |
+
+All differences p <= 0.002 (novelty p = 0.0003, per creature p = 0.0001, diversity p = 0.0016). Shaking nearly
+halves lasting novelty per creature and lowers diversity, although the shaken world holds *more* creatures
+(food is easier to find when spread evenly). The same direction as Rainey & Travisano, in a world of evolving
+neural-network creatures: stable spatial structure is one of the ingredients that make the best world
+open-ended.
