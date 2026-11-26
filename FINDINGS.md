@@ -1272,3 +1272,23 @@ persistent lineage's main strategy was built from evolved chains (complexity 5 a
 Primordia exceeded the complexity ceiling of the fixed actions. Rare and not significant, but the first sign of
 growing complexity. Conclusion: neither brain size nor the action repertoire alone is what holds Primordia back.
 That leaves Soros & Stanley's condition 2 (evolution creating new opportunities for others) as the main suspect.
+
+## Remains: food made by other creatures' deaths (26 Nov 2026, 100k ticks, 10 seeds per arm)
+
+Soros & Stanley's condition 2 ("evolution should create novel opportunities"), `fast/eco.py`: the second food
+exists only because of others: a dead creature's body becomes food where it died (1 + half its remaining energy;
+rots at 0.2% a tick); eaten by digging, digested with the gut trade-off; no soil. Matched control: the same
+amount every tick on random cells.
+
+| | survived | MODES novelty | diversity | novelty per 1000 creatures | specialist scavengers (gut > 0.5) | remains left uneaten |
+|---|---|---|---|---|---|---|
+| remains where creatures die | 10/10 | 27.4 +- 10.5 | 1.62 | 11.4 | 0% | 2,760 |
+| same amount at random places | 10/10 | 24.6 +- 7.2 | 1.66 | 10.9 | 0% | 3,630 |
+
+No difference (novelty p = 0.51, diversity p = 0.75). A little more of the remains gets eaten when they lie where
+creatures died (p = 0.06), but no scavenger way of life evolved: the digestion trade-off in this world (buried_base
+0.5 in the base world) lets ordinary guts use remains well enough, so specialising never pays. Side observation:
+both arms score far below the plain world with soil-grown buried food (~26 vs ~65 lasting new strategies over
+100k ticks): a steady, independent second food source matters more than where it comes from. The MODES-scored
+search points the same way (its best worlds all have rich buried food). Follow-up queued: separate habitats (no
+surface food on rich soil, harsher digestion trade-off).

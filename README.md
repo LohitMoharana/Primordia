@@ -62,6 +62,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
+| ❌ | **Remains** (food made only by other creatures' deaths; Soros & Stanley's condition 2) | No scavengers evolved and lasting novelty was the same as with the same food at random places (p = 0.51). But both scored far below worlds with soil-grown buried food: a steady second food source matters. |
 | ❌ | **Evolvable actions** (creatures evolve their own action chains) | Chains get used (4% of actions) but lasting novelty is no higher (p = 0.36). In 2/10 worlds a persistent strategy was built from chains (complexity 5 and 9, the first time the ceiling of 3 was broken), but that's rare. |
 | ❌ | **Open brains** (no fixed brain size; Soros & Stanley's condition 4) | Brains don't grow when allowed to (24.8 vs 23.9 units after 100k ticks), and lasting novelty is no higher (MODES, 10 vs 10 seeds, p = 0.29). Extra neurons don't pay when senses and actions are fixed. |
 | ❌ | **Image-model search for open-ended worlds** (ASAL, applied to evolving creatures) | Its top-rated world died out in **9/10** fresh runs and produced about a fifth of the lasting new strategies of the plain world (MODES, p = 0.0001). Picture novelty rewards boom-and-bust, not lasting evolution. Along the way it found three loopholes (near-dead, shrinking and crashing worlds all "look new"). |
@@ -87,7 +88,8 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] 🧠 Open brains: no fixed brain size (Soros & Stanley's condition 4): **no effect**; brains don't grow when allowed to
 - [x] 🧩 Evolvable actions: creatures evolve their own action chains: **no effect on lasting novelty**; first complexity above the ceiling, in 2/10 worlds
 - [ ] 🔎 Search for the kind of world that keeps producing lasting novelty (ASAL's search, scored with MODES) *(running)*
-- [ ] 🌱 Creatures as opportunities for each other (Soros & Stanley's condition 2): bodies, waste and materials others can use
+- [x] 🌱 Remains: food made by other creatures' deaths (Soros & Stanley's condition 2): **no effect**; no scavengers evolved
+- [ ] 🏞️ Separate habitats, shaken, switching and 4x-larger worlds *(queued)*
 - [ ] Large many-seed sweeps
 - [ ] 🌐 3D
 

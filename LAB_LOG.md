@@ -3,6 +3,14 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 15:35 IST
+
+**Finished:** remains test (condition 2): no effect (novelty 27.4 vs 24.6, p = 0.51), no scavengers evolved;
+both arms far below the plain world (~26 vs ~65). Written into FINDINGS.md. **Running:** fresh-seed check of the
+search's worlds (final best, per-creature best, plain world), started 15:31. **Added to the queue:** separate
+habitats (no surface food on rich soil + harsh digestion trade-off). Files: `results/remains/`, plus earlier
+comparisons copied to `results/` (actions, open_brains2, modes_vs_asal).
+
 ## 2026-11-26 14:55 IST
 
 **Finished:** MODES-scored world search, 24 generations (384 worlds, 40,000 ticks each, ~7.5 h). Median
