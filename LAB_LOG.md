@@ -3,6 +3,15 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 22:44 IST
+
+**Running:** switching world, 106 min in, 26 of 30 runs done (all alive). Provisional:
+switching every 5000 ticks: novelty 148.1, per 1000 creatures 29.6, diversity 3.65, 5,020 creatures (10 runs);
+regime A fixed (the best world): 179.4, 26.7, 3.77, 6,720 (7 runs); regime B fixed (harder: food drifts 3x
+faster, 0.6x as rich, predators catch 2.5x as often): 129.8, **40.2**, 3.42, 3,390 (9 runs).
+So far switching looks like a mix of A and B, not something beyond both; the harder regime B gives the most
+novelty per creature (fewer creatures). Final in the morning. **Next (overnight):** 4x world, ~13:00 tomorrow.
+
 ## 2026-11-26 21:44 IST
 
 **Running:** switching world (Kashtan & Alon 2005), 46 min in, 1 of 30 runs done (switching every 5000 ticks:
