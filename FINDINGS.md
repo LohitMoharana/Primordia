@@ -1249,3 +1249,26 @@ inputs and choose among the same 14 actions. If Soros & Stanley's condition 4 is
 what creatures can sense and do (fixed senses, a fixed action set), not on brain size. Condition 2 (evolution creating
 new opportunities for others) is the other candidate. Next: a MODES-scored search over kinds of world
 (`modes_search.py`) to see which world features keep lasting novelty going.
+
+## Evolvable actions: creatures evolve their own actions (26 Nov 2026, 100k ticks, 10 seeds per arm)
+
+Open brains showed brain size is not the limit; the next suspect for Soros & Stanley's condition 4 was the fixed
+repertoire of 14 actions. `fast/actions.py`: a creature can own up to 16 action chains of 2-8 basic actions; each
+owned chain is one more brain output, and choosing it runs the whole chain over the next ticks. Mutation adds a new
+chain (2% of births), duplicates one with its wiring (1%, gene duplication), edits, lengthens or shortens one (5%) or
+deletes one (1%); each owned chain costs energy. Control: identical chains, mutations and costs, but the brain can
+never choose them. MODES counts a chain as its own kind of behaviour (coded by its content), and complexity counts a
+chain by its length, so complexity can exceed 3 for the first time. Same world as open brains.
+
+| | survived | MODES novelty | change | diversity | complexity (max) | chains owned | share of actions via chains |
+|---|---|---|---|---|---|---|---|
+| ON | 10/10 | 59.5 +- 22.6 | 1.78 | 2.41 | **3.8** (two runs **5** and **9**) | 5.4 | **4%** |
+| OFF | 10/10 | 67.9 +- 17.6 | 2.15 | 2.65 | 3.0 (all runs) | 4.9 | 0% |
+
+Permutation tests: novelty p = 0.36, change p = 0.15, diversity p = 0.12, complexity p = 0.47, chains owned p = 0.64;
+use of chains p = 0.0001. Creatures do use evolved actions, but owning them is not selected for (as many are owned
+as in the control, where they are useless), and lasting novelty does not rise. One exception: in 2/10 worlds a
+persistent lineage's main strategy was built from evolved chains (complexity 5 and 9), the first time anything in
+Primordia exceeded the complexity ceiling of the fixed actions. Rare and not significant, but the first sign of
+growing complexity. Conclusion: neither brain size nor the action repertoire alone is what holds Primordia back.
+That leaves Soros & Stanley's condition 2 (evolution creating new opportunities for others) as the main suspect.
