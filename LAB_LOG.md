@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 13:35 IST
+
+**Running:** MODES-scored world search, generation 22 of 24. Median lasting novelty: 60, 74, **89** in
+generations 19-21 (the highest median so far); 15-16 of 16 worlds survive. All-time best still 133.
+Three generations left (about an hour): the search should end around 14:30, then the queue runs remains
+(condition 2), the fresh-seed check of the search's worlds, shaken, switching and 4x-larger worlds.
+
 ## 2026-11-26 12:35 IST
 
 **Running:** MODES-scored world search, generation 19 of 24 (21-23 min per generation). Median lasting
