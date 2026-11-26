@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 17:40 IST: first confirmed positive result
+
+**Finished:** fresh-seed check. Both worlds found by the MODES-scored search beat the plain world on 10 fresh
+seeds over 100,000 ticks: lasting novelty 182.8 and 114.8 vs 65.6, per 1000 creatures 27.3 and 31.1 vs 20.2,
+diversity 3.80 and 3.38 vs 2.75 (all p <= 0.009; 10/10 survived). Written into FINDINGS.md and README.
+**Running:** separate habitats (started 17:09).
+
 ## 2026-11-26 16:38 IST
 
 **Running:** fresh-seed check (66 min in). The 10 plain-world runs are done and reproduce the earlier numbers

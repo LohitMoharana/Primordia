@@ -1292,3 +1292,36 @@ both arms score far below the plain world with soil-grown buried food (~26 vs ~6
 100k ticks): a steady, independent second food source matters more than where it comes from. The MODES-scored
 search points the same way (its best worlds all have rich buried food). Follow-up queued: separate habitats (no
 surface food on rich soil, harsher digestion trade-off).
+
+## ✅ A world that keeps evolution inventing: MODES-scored search, confirmed on fresh seeds (26 Nov 2026)
+
+`fast/modes_search.py`: ASAL's search (Sep-CMA-ES over 14 world settings, starting from the plain world), but
+each world scored by MODES novelty (new strategies that pass the persistence filter) over 40,000 ticks, one
+seed per world. 24 generations, 384 worlds, ~7.5 h. The median world's lasting novelty rose from 25 to 81-98;
+every world survived in each of the last 13 generations (`results/modes_search/`).
+
+**Check on 10 fresh seeds per world, 100,000 ticks** (`results/modes_search_check/`; permutation tests against
+the plain world; the plain world reproduced its earlier numbers exactly):
+
+| world | survived | MODES novelty | novelty per 1000 creatures | diversity (bits) | change per snapshot | creatures |
+|---|---|---|---|---|---|---|
+| plain starting world | 10/10 | 65.6 +- 16.3 | 20.2 +- 4.6 | 2.75 | 2.27 | 3,240 |
+| **search's final best** | 10/10 | **182.8 +- 20.3** (p = 0.0001) | **27.3 +- 2.9** (p = 0.0014) | **3.80** (p = 0.0001) | **8.33** (p = 0.0001) | 6,700 |
+| **search's best per creature** (gen 6) | 10/10 | **114.8 +- 25.7** (p = 0.0004) | **31.1 +- 6.2** (p = 0.0004) | **3.38** (p = 0.009) | **4.55** (p = 0.0015) | 3,790 |
+
+Both worlds the search found are clearly more open-ended than the plain world on seeds the search never saw,
+over runs 2.5x longer than it ever watched: 1.75-2.8x as many lasting new strategies, more of them per creature
+(+35% and +54%, so not just a bigger population), more diverse, changing 2-3.7x faster.
+
+- Final best: 14 permanent food clusters (rich), 10 patches of rich buried food (base 0.85), a little poison
+  (0.032), 7 gentle predators (catch 0.08), a few shelters, no seasons.
+- Best per creature: 20 short-lived drifting food clusters, mild seasons, 7 rich buried-food patches (base 0.98),
+  18 gentle predators (catch 0.10), a few shelters, no poison.
+Common to both: plenty of an independent second food source (buried food), gentle predators, a few shelters,
+worlds that are rich and survivable. The remains test points the same way (without soil-grown buried food,
+novelty fell to ~26).
+
+Limits: complexity stays at 3 in all worlds (fixed actions; the measure cannot rise); one skeleton definition;
+100,000 ticks. First positive result of this phase: the published search method, scored with the published
+measure, found worlds that sustain more open-ended evolution, confirmed independently. Next: which features do
+the work (separate habitats, shaken, switching and 4x-larger versions of the best world, queued).

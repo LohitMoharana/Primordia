@@ -62,6 +62,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ❌ | Working memory | Doesn't help, even when it starts switched off and has to earn its place. |
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
+| ✅ | **Worlds that keep evolution inventing** (ASAL's search, scored with the published MODES measure) | On 10 fresh seeds, the two worlds it found produce **1.75-2.8x as many lasting new strategies** as the plain world, more per creature (+35% and +54%), more diverse, all 10/10 surviving (p <= 0.0014). Common ingredients: a rich second food source, gentle predators, a few shelters. |
 | ❌ | **Remains** (food made only by other creatures' deaths; Soros & Stanley's condition 2) | No scavengers evolved and lasting novelty was the same as with the same food at random places (p = 0.51). But both scored far below worlds with soil-grown buried food: a steady second food source matters. |
 | ❌ | **Evolvable actions** (creatures evolve their own action chains) | Chains get used (4% of actions) but lasting novelty is no higher (p = 0.36). In 2/10 worlds a persistent strategy was built from chains (complexity 5 and 9, the first time the ceiling of 3 was broken), but that's rare. |
 | ❌ | **Open brains** (no fixed brain size; Soros & Stanley's condition 4) | Brains don't grow when allowed to (24.8 vs 23.9 units after 100k ticks), and lasting novelty is no higher (MODES, 10 vs 10 seeds, p = 0.29). Extra neurons don't pay when senses and actions are fixed. |
@@ -87,7 +88,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] 📏 Measure open-endedness the published way: MODES (Dolson et al. 2019) and ASAL (Kumar et al. 2024) on Primordia
 - [x] 🧠 Open brains: no fixed brain size (Soros & Stanley's condition 4): **no effect**; brains don't grow when allowed to
 - [x] 🧩 Evolvable actions: creatures evolve their own action chains: **no effect on lasting novelty**; first complexity above the ceiling, in 2/10 worlds
-- [ ] 🔎 Search for the kind of world that keeps producing lasting novelty (ASAL's search, scored with MODES) *(running)*
+- [x] 🔎 Search for the kind of world that keeps producing lasting novelty (ASAL's search, scored with MODES): **found and confirmed**
 - [x] 🌱 Remains: food made by other creatures' deaths (Soros & Stanley's condition 2): **no effect**; no scavengers evolved
 - [ ] 🏞️ Separate habitats, shaken, switching and 4x-larger worlds *(queued)*
 - [ ] Large many-seed sweeps
