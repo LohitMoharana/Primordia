@@ -1325,3 +1325,22 @@ Limits: complexity stays at 3 in all worlds (fixed actions; the measure cannot r
 100,000 ticks. First positive result of this phase: the published search method, scored with the published
 measure, found worlds that sustain more open-ended evolution, confirmed independently. Next: which features do
 the work (separate habitats, shaken, switching and 4x-larger versions of the best world, queued).
+
+## Separate habitats and a harsher digestion trade-off (26 Nov 2026, 100k ticks, 10 seeds per world)
+
+Follow-up to remains (where no scavengers evolved because ordinary guts digest the second food well). On the
+search's best world: (1) separate habitats (no surface food grows on rich soil: living there takes digging) plus
+a harsher digestion trade-off (buried_base 0.3 instead of 0.85); (2) the same harsh trade-off with overlapping
+habitats; (3) the best world as it is.
+
+| | survived | MODES novelty | novelty per 1000 creatures | diversity | creatures |
+|---|---|---|---|---|---|
+| (1) separate habitats + harsh trade-off | 10/10 | 114.4 | **34.8** | 3.20 | 3,380 |
+| (2) overlapping habitats + harsh trade-off | 10/10 | 143.3 | **34.0** | 3.25 | 4,210 |
+| (3) best world as it is | 10/10 | **182.8** | 27.3 | **3.80** | 6,700 |
+
+Separation itself does nothing per creature ((1) vs (2): p = 0.77; diversity p = 0.75); it only shrinks the
+population and so the total (p = 0.009). The harsher trade-off raises novelty per creature by about a quarter
+((2) vs (3): 34.0 vs 27.3, p = 0.0002) but lowers the total and the diversity (p = 0.0008, 0.0007), because the
+population is smaller. A trade-off rather than a free gain: making each way of life costlier makes each lineage
+more inventive, but fewer creatures and fewer coexisting strategies result.

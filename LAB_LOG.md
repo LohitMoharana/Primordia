@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 19:05 IST
+
+**Finished:** separate habitats. Separation: no effect per creature (p = 0.77). Harsher digestion trade-off:
++25% novelty per creature (34.0 vs 27.3, p = 0.0002) but lower total and diversity (smaller population).
+Written into FINDINGS.md. **Running:** shaken world (Rainey & Travisano), started 18:53.
+
 ## 2026-11-26 18:43 IST
 
 **Running:** separate habitats (93 min in; 20 of 30 runs done, the best-world reference arm still running).
