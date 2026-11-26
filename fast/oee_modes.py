@@ -127,6 +127,7 @@ class ModesTracker:
         self.units = {}           # creature id -> brain units (worlds with evolving brain size)
         self.macro_rows = []      # (time, macro statistics) in worlds with evolvable actions
         self.eco_rows = []        # (time, remains statistics) in worlds with remains (eco.py)
+        self.pops = []            # population at every filtered snapshot
 
     def attach(self, sim):
         idx = np.flatnonzero(sim.alive)
@@ -192,6 +193,8 @@ class ModesTracker:
                 self.seen.add(s)
             most = max(most, complexity(np.frombuffer(s, np.int64)))
         self.rows.append((sim.tick, change, novelty, div, most, active))
+        if active:
+            self.pops.append(len(alive_now))
         if hasattr(sim, "eco_summary"):
             d = sim._dig_counts - getattr(self, "_dig0", 0)
             self._dig0 = sim._dig_counts
@@ -217,6 +220,8 @@ class ModesTracker:
         a = np.array([x[1:5] for x in r], float)
         out = dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
                    diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))
+        pm = float(np.mean(self.pops)) if self.pops else 0.0
+        out.update(pop_mean=pm, novelty_per_1k=out["novelty"] / (pm / 1000.0) if pm > 0 else 0.0)
         if self.eco_rows:
             m = [x[1] for x in self.eco_rows]
             late = m[len(m) // 2:]

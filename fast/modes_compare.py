@@ -33,11 +33,47 @@ import oee_modes as M
 METRICS = ["change", "novelty", "diversity", "complexity",
            "units_mean", "units_max", "units_persistent",   # brain units: worlds with evolving brain size only
            "macros_owned", "macro_len_mean", "macro_len_max", "macro_share",  # evolvable actions only
-           "scavengers", "gut_mean", "dig_rate", "remains_left"]  # remains worlds only
+           "scavengers", "gut_mean", "dig_rate", "remains_left",  # remains worlds only
+           "pop_mean", "novelty_per_1k"]  # mean population, and novelty per 1000 creatures
+
+
+def parse_mods(spec):
+    """'<world>|k=v,k=v': changes to a world. scale=2 (asal_world.scale_world), shake_every=1
+    (a shaken world), or any setting, e.g. catch_p=0.2."""
+    if "|" not in spec:
+        return spec, {}
+    base, m = spec.split("|", 1)
+    mods = {}
+    for kv in m.split(","):
+        k, v = kv.split("=")
+        try:
+            v = int(v)
+        except ValueError:
+            try:
+                v = float(v)
+            except ValueError:
+                pass
+        mods[k.strip()] = v
+    return base, mods
+
+
+def apply_mods(kw, mods):
+    kw = dict(kw)
+    for k, v in mods.items():
+        if k == "scale":
+            kw = AW.scale_world(kw, v)
+        else:
+            kw[k] = v
+    return kw
 
 
 def make_world(spec, seed):
     """The simulation for a world spec (same class choice as run_fast.py for modes)."""
+    spec, mods = parse_mods(spec)
+    if spec.startswith("mode:") and mods:
+        raise SystemExit("world changes (|...) are for start / best: / u: worlds")
+    if mods:
+        return AW.make_sim(apply_mods(AW.decode(world_u(spec)), mods), seed)
     if spec.startswith("mode:"):
         _, name, arm = spec.split(":")
         from modes import MODES
@@ -62,9 +98,10 @@ def make_world(spec, seed):
 
 
 def describe(spec):
-    if spec.startswith("mode:"):
+    base, mods = parse_mods(spec)
+    if base.startswith("mode:"):
         return spec
-    return AW.describe(world_u(spec))
+    return AW.describe(world_u(base)) + ("" if not mods else " | " + ", ".join(f"{k}={v}" for k, v in mods.items()))
 
 
 def world_u(spec):

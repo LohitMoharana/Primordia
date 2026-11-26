@@ -198,7 +198,83 @@ def worker_init():
 def make_sim(kw, seed):
     worker_init()
     from ways import WaysSim
-    return WaysSim(seed=seed, founders=_founders(seed), **kw)
+    kw = dict(kw)
+    cls, extra = WaysSim, {}
+    shake = int(kw.pop("shake_every", 0))
+    if shake:
+        cls, extra["shake_every"] = _shaken(cls), shake
+    vary = {k: kw.pop(k) for k in list(kw) if k.startswith("vary_")}
+    if vary:
+        cls = _varying(cls)
+        extra.update(vary)
+    return cls(seed=seed, founders=_founders(seed), **extra, **kw)
+
+
+def _varying(base):
+    """VARYING WORLD (after Kashtan & Alon 2005: environments that switch between related goals
+    speed up evolution and produce modular designs). Two regimes of the same world:
+      A  the world as given
+      B  a harder version of it: food clusters drift vary_speed times faster, are vary_rich times
+         as rich, and predators catch vary_catch times as often
+    vary_every = K: the world switches A -> B -> A ... every K ticks. vary_every = 0 with
+    vary_b = 1: regime B all the time (the fixed-B control); with vary_b = 0, regime A all the time."""
+    class Varying(base):
+        def __init__(self, *a, vary_every=0, vary_b=0, vary_speed=3.0, vary_rich=0.6, vary_catch=2.5, **kw):
+            super().__init__(*a, **kw)
+            c = self.cfg
+            self._regime_a = dict(patch_speed=c["patch_speed"], patch_peak=c["patch_peak"],
+                                  catch_p=c.get("catch_p", 0.0))
+            self._regime_b = dict(patch_speed=c["patch_speed"] * vary_speed, patch_peak=c["patch_peak"] * vary_rich,
+                                  catch_p=min(1.0, c.get("catch_p", 0.0) * vary_catch))
+            c.update(vary_every=int(vary_every), vary_b=int(vary_b), vary_speed=float(vary_speed),
+                     vary_rich=float(vary_rich), vary_catch=float(vary_catch))
+            self._set_regime(bool(vary_b))
+
+        def _set_regime(self, b):
+            self.cfg.update(self._regime_b if b else self._regime_a)
+            self.cfg["regime"] = "B" if b else "A"
+
+        def _world_step(self, foods=None):
+            K = self.cfg["vary_every"]
+            if K and self.t % K == 0 and self.t > 0:
+                self._set_regime(self.cfg["regime"] == "A")
+            super()._world_step(foods)
+    Varying.__name__ = "Varying" + base.__name__
+    return Varying
+
+
+def scale_world(kw, s):
+    """The same world on an s-times wider map (s^2 the area): s^2 as many food clusters, soil
+    patches and predators, each cluster as rich as before, so density stays the same."""
+    kw = dict(kw)
+    a = int(round(s * s))
+    kw["size"] = int(kw.get("size", 128) * s)
+    kw["n_patches"] = int(kw["n_patches"] * a)
+    kw["n_soil"] = int(kw.get("n_soil", 1) * a)
+    kw["n_pred"] = int(kw.get("n_pred", 5) * a)
+    return kw
+
+
+def _shaken(base):
+    """SHAKEN WORLD (after Rainey & Travisano 1998: shaking a flask destroys the spatial structure
+    that drives adaptive radiation). Every shake_every ticks all surface and buried food is moved
+    to random cells (a random permutation of the map, own random stream): the same food, but no
+    stable places to adapt to."""
+    class Shaken(base):
+        def __init__(self, *a, shake_every=1, **kw):
+            super().__init__(*a, **kw)
+            self.cfg["shake_every"] = int(shake_every)
+            self.rng_shake = np.random.default_rng([int(kw.get("seed", 1)), 7373])
+
+        def _world_step(self, foods=None):
+            super()._world_step(foods)
+            if self.t % self.cfg["shake_every"] == 0:
+                p = self.rng_shake.permutation(self.size * self.size)
+                self.food = np.ascontiguousarray(self.food.ravel()[p].reshape(self.food.shape))
+                if getattr(self, "buried", None) is not None:
+                    self.buried = np.ascontiguousarray(self.buried.ravel()[p].reshape(self.buried.shape))
+    Shaken.__name__ = "Shaken" + base.__name__
+    return Shaken
 
 
 def rollout(job):
