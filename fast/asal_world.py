@@ -203,11 +203,35 @@ def make_sim(kw, seed):
     shake = int(kw.pop("shake_every", 0))
     if shake:
         cls, extra["shake_every"] = _shaken(cls), shake
+    sep = float(kw.pop("separate_habitats", 0))
+    if sep:
+        cls, extra["separate_habitats"] = _separated(cls), sep
     vary = {k: kw.pop(k) for k in list(kw) if k.startswith("vary_")}
     if vary:
         cls = _varying(cls)
         extra.update(vary)
     return cls(seed=seed, founders=_founders(seed), **extra, **kw)
+
+
+def _separated(base):
+    """SEPARATE HABITATS (niche separation): surface food does not grow on rich soil (where
+    soil_map > separate_habitats), so the land with buried food and the land with surface food do
+    not overlap: living on soil land takes digging. Nothing tells a creature to dig; it only makes
+    a second way of life possible without generalists doing both on the same cells."""
+    class Separated(base):
+        def __init__(self, *a, separate_habitats=0.2, **kw):
+            self._sep = float(separate_habitats)
+            super().__init__(*a, **kw)
+            self.cfg["separate_habitats"] = self._sep
+            self._update_patch_map()
+
+        def _update_patch_map(self):
+            super()._update_patch_map()
+            sm = getattr(self, "soil_map", None)
+            if sm is not None:
+                self.regrow_map = self.regrow_map * (sm <= self._sep)
+    Separated.__name__ = "Separated" + base.__name__
+    return Separated
 
 
 def _varying(base):
