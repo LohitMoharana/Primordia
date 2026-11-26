@@ -17,3 +17,7 @@ gen 12/24  best novelty 133  median 68  survived 16/16  all-time 133  22 min
 gen 13/24  best novelty 124  median 82  survived 16/16  all-time 133  22 min
 gen 14/24  best novelty 118  median 68  survived 16/16  all-time 133  23 min
 gen 15/24  best novelty 106  median 73  survived 16/16  all-time 133  20 min
+gen 16/24  best novelty 133  median 81  survived 16/16  all-time 133  22 min
+   search centre: 12 food clusters x1.99, drift 0.013, clusters permanent, no seasons, poison 0.016, 7 buried patches (base 0.99), 15 predators (catch 0.07, gain 1.0), no shelters, gut q 1.37
+gen 17/24  best novelty 110  median 78  survived 16/16  all-time 133  23 min
+gen 18/24  best novelty 108  median 76  survived 16/16  all-time 133  21 min

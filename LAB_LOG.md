@@ -3,6 +3,14 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 12:35 IST
+
+**Running:** MODES-scored world search, generation 19 of 24 (21-23 min per generation). Median lasting
+novelty per world: 81, 78, 76 in generations 16-18; every world survived (16/16) for six generations in a
+row. All-time best still 133. The search centre has added predators back: 12 permanent food clusters, rich
+buried food, a little poison, 15 very gentle predators (catch chance 0.07), no seasons. Expected end:
+about 14:30, then the remains test starts.
+
 ## 2026-11-26 11:35 IST
 
 **Running:** MODES-scored world search, generation 16 of 24 (20-23 min per generation). Median lasting
