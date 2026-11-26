@@ -3,6 +3,15 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-26 18:43 IST
+
+**Running:** separate habitats (93 min in; 20 of 30 runs done, the best-world reference arm still running).
+Separate habitats + harsh gut trade-off: lasting novelty 114.4, per 1000 creatures 34.8, diversity 3.20,
+3,380 creatures. Overlapping habitats, same trade-off: 143.3, 34.0, 3.25, 4,210 creatures. So far separation
+itself makes no difference per creature (it only shrinks the population); the harsher trade-off in both
+looks higher per creature than the best world had in the fresh-seed check (27.3), to be confirmed when its
+arm finishes.
+
 ## 2026-11-26 17:40 IST: first confirmed positive result
 
 **Finished:** fresh-seed check. Both worlds found by the MODES-scored search beat the plain world on 10 fresh
