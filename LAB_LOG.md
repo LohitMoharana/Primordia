@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 07:05 IST
+
+**Running:** 4x world rerun (cap 80,000), 82 min in. The 6 normal-size runs are done (151-201 lasting new
+strategies, all alive); the 6 large-world runs are still going, so none has hit a cap this time. Expected
+~10:00-11:00.
+
 ## 2026-11-27 05:45 IST
 
 **Finished overnight:** switching world (all 30 runs): no extra novelty from switching (it lands between the two
