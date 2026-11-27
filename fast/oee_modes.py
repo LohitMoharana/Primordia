@@ -80,6 +80,28 @@ def skeletons(sim, idx, probes):
 MACRO_BASE = 100  # skeleton codes >= this are evolved action chains (actions.py)
 
 
+def skeletons_coarse(sim, idx, probes):
+    """Sensitivity check: a coarser kind: the two kinds of action a creature picks most over all 32
+    situations (in order). Children keep it in ~90% of births; only ~30 kinds possible."""
+    a = actions(sim, idx, probes)
+    c = np.stack([(a == k).sum(1) for k in range(len(KIND_NAMES))], 1)
+    return np.argsort(-c, 1, kind="stable")[:, :2].astype(np.int64)
+
+
+def skeletons_fine(sim, idx, probes):
+    """Sensitivity check: a finer kind: the kind picked most in each of 8 groups of 4 situations
+    (8^8 possible). Children keep it in ~45% of births."""
+    a = actions(sim, idx, probes)
+    g = a.reshape(len(idx), 8, 4)
+    out = np.zeros((len(idx), 8), np.int64)
+    cnt = np.stack([(g == k).sum(2) for k in range(len(KIND_NAMES))], 2)  # n x 8 x kinds
+    out[:] = cnt.argmax(2)
+    return out
+
+
+SKELETONS = {"strategy": skeletons, "coarse": skeletons_coarse, "fine": skeletons_fine}
+
+
 def actions(sim, idx, probes, raw=False):
     """Most likely action of creatures idx in each probe situation (n x 32): its kind, or with
     raw=True the output index itself (>= 14: an evolved action chain)."""
@@ -115,10 +137,19 @@ class ModesTracker:
     """OEETracker for one Primordia run. Call attach(sim) once, then update(sim) after
     every step (cheap: it only reads birth records), and it snapshots every `resolution` ticks."""
 
-    def __init__(self, probes, resolution=500, interval=5000):
+    def __init__(self, probes, resolution=500, interval=5000, skeleton="strategy", share_tree_with=None,
+                 prune_tree=False):
         assert interval % resolution == 0, "interval must be a multiple of resolution (as in OEE.hpp)"
         self.probes, self.resolution, self.interval = probes, int(resolution), int(interval)
-        self.parent = {}          # creature id -> parent id (-1 for founders)
+        self.skeleton_fn = SKELETONS[skeleton]
+        # a second tracker on the same run (sensitivity check) shares the first one's family tree;
+        # the first one must be updated first each tick (it reads the birth records)
+        self.leader = share_tree_with
+        self.parent = share_tree_with.parent if share_tree_with is not None else {}  # id -> parent (-1: founder)
+        # long runs: keep only the lines from living creatures back to the oldest kept snapshot (all
+        # that the persistence filter needs), so memory stays bounded. Not with sharing trackers that
+        # look further back.
+        self.prune_tree = bool(prune_tree) and share_tree_with is None
         self.snapshots = []       # list of (time, {id: skeleton bytes})
         self.prev_coal = {}
         self.seen = set()
@@ -143,11 +174,12 @@ class ModesTracker:
             sim._births = []
 
     def update(self, sim):
-        self._drain(sim)
+        if self.leader is None:
+            self._drain(sim)
         if sim.tick % self.resolution:
             return
         idx = np.flatnonzero(sim.alive)
-        sk = skeletons(sim, idx, self.probes) if len(idx) else np.zeros((0, len(CONTEXTS)), np.int64)
+        sk = self.skeleton_fn(sim, idx, self.probes) if len(idx) else np.zeros((0, 1), np.int64)
         self.snapshots.append((sim.tick, {int(a): s.tobytes() for a, s in zip(sim.aid[idx], sk)}))
         if hasattr(sim, "nact"):
             # remember brain sizes only for creatures in kept snapshots (bounded memory)
@@ -156,7 +188,22 @@ class ModesTracker:
             self.units.update({int(a): int(u) for a, u in zip(sim.aid[idx], sim.nact[idx])})
         if len(self.snapshots) > self.interval // self.resolution + 1:
             self.snapshots.pop(0)
-        self._calc(sim, set(int(a) for a in sim.aid[idx]))
+        alive_now = set(int(a) for a in sim.aid[idx])
+        self._calc(sim, alive_now)
+        if self.prune_tree:
+            self._prune(alive_now)
+
+    def _prune(self, alive_now):
+        oldest = self.snapshots[0][1]
+        keep, par = set(), self.parent
+        for a in alive_now:
+            x = a
+            while x != -1 and x not in keep:
+                keep.add(x)
+                if x in oldest:
+                    break
+                x = par.get(x, -1)
+        self.parent = {a: par[a] for a in keep if a in par}
 
     def _canopy_roots(self, then_ids, alive_now):
         """Creatures alive at the old snapshot that have descendants alive now (GetCanopyExtantRoots)."""
@@ -191,7 +238,7 @@ class ModesTracker:
             if s not in self.seen:
                 novelty += 1
                 self.seen.add(s)
-            most = max(most, complexity(np.frombuffer(s, np.int64)))
+            most = max(most, complexity(np.frombuffer(s, np.int64)) if self.skeleton_fn is skeletons else 0)
         self.rows.append((sim.tick, change, novelty, div, most, active))
         if active:
             self.pops.append(len(alive_now))
@@ -216,7 +263,7 @@ class ModesTracker:
         r = [x for x in self.rows if x[5]][1:]  # the first filtered snapshot counts everything as change/new
         if not r:
             return dict(change=0.0, novelty=0.0, diversity=0.0, complexity=0.0, snapshots=0,
-                        units_mean=0.0, units_max=0, units_persistent=0.0)
+                        units_mean=0.0, units_max=0, units_persistent=0.0, pop_mean=0.0, novelty_per_1k=0.0)
         a = np.array([x[1:5] for x in r], float)
         out = dict(change=float(a[:, 0].mean()), novelty=float(a[:, 1].sum()),
                    diversity=float(a[:, 2].mean()), complexity=float(a[:, 3].max()), snapshots=len(r))

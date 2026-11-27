@@ -30,11 +30,16 @@ import numpy as np
 import asal_world as AW
 import oee_modes as M
 
+# sensitivity check (--variants): name, skeleton, persistence interval
+VARIANTS = [("i2500", "strategy", 2500), ("i10000", "strategy", 10000),
+            ("coarse", "coarse", 5000), ("fine", "fine", 5000)]
+
 METRICS = ["change", "novelty", "diversity", "complexity",
            "units_mean", "units_max", "units_persistent",   # brain units: worlds with evolving brain size only
            "macros_owned", "macro_len_mean", "macro_len_max", "macro_share",  # evolvable actions only
            "scavengers", "gut_mean", "dig_rate", "remains_left",  # remains worlds only
            "pop_mean", "novelty_per_1k"]  # mean population, and novelty per 1000 creatures
+METRICS += [f"{m}_{v[0]}" for v in VARIANTS for m in ("novelty", "per1k", "diversity")]  # --variants only
 
 
 def parse_mods(spec):
@@ -119,12 +124,25 @@ def run_one(job):
     AW.worker_init()
     t0 = time.time()
     sim = make_world(job["world"], job["seed"])
-    T = M.ModesTracker(M.load_probes(), job["resolution"], job["interval"])
+    P = M.load_probes()
+    T = M.ModesTracker(P, job["resolution"], job["interval"], prune_tree=not job.get("variants"))
     T.attach(sim)
+    extra = {}
+    if job.get("variants"):  # sensitivity check: the same run measured other ways
+        for name, sk, iv in VARIANTS:
+            extra[name] = M.ModesTracker(P, job["resolution"], iv, skeleton=sk, share_tree_with=T)
+    bedau = None
+    if job.get("bedau"):
+        from oee_bedau import BedauTracker
+        bedau = BedauTracker(P, T, job["resolution"], seed=job["seed"])
     status = "ok"
     while sim.tick < job["ticks"]:
         sim.step()
         T.update(sim)
+        for t in extra.values():
+            t.update(sim)
+        if bedau is not None:
+            bedau.update(sim)
         if sim.population == 0:
             status = f"extinct@{sim.tick}"
             break
@@ -132,6 +150,14 @@ def run_one(job):
             status = f"exploded@{sim.tick}"
             break
     s = T.summary()
+    for name, t in extra.items():
+        v = t.summary()
+        s.update({f"novelty_{name}": v["novelty"], f"per1k_{name}": v["novelty_per_1k"],
+                  f"diversity_{name}": v["diversity"]})
+    if bedau is not None:
+        os.makedirs(os.path.join(job["out"], "bedau"), exist_ok=True)
+        slug = "".join(ch if ch.isalnum() else "_" for ch in job["world"])[:60]
+        bedau.save(os.path.join(job["out"], "bedau", f"{slug}_{job['seed']}.npz"), world=job["world"], seed=job["seed"])
     return dict(world=job["world"], seed=job["seed"], status=status, final_pop=sim.population,
                 secs=round(time.time() - t0), rows=T.rows, **s)
 
@@ -157,6 +183,8 @@ def main():
     ap.add_argument("--pop-cap", type=int, default=20000)
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--out", default=os.path.join(HERE, "runs", "modes_compare"))
+    ap.add_argument("--variants", action="store_true", help="also measure with 2 other persistence windows and 2 other skeletons")
+    ap.add_argument("--bedau", action="store_true", help="also record Bedau's activity statistics with a neutral shadow")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     M.load_probes()  # make the probe file once, before the workers start
@@ -173,7 +201,8 @@ def main():
     for w in a.worlds:
         for s in range(a.first_seed, a.first_seed + a.seeds):
             if (w, s) not in done:
-                jobs.append(dict(world=w, seed=s, ticks=a.ticks, resolution=a.resolution,
+                jobs.append(dict(world=w, seed=s, ticks=a.ticks, resolution=a.resolution, out=a.out,
+                                 variants=a.variants, bedau=a.bedau,
                                  interval=a.interval, pop_cap=a.pop_cap))
     print(f"{len(jobs)} runs to do ({len(done)} already done); {a.jobs} at a time", flush=True)
     for w in a.worlds:
