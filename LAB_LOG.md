@@ -3,6 +3,14 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 05:45 IST
+
+**Finished overnight:** switching world (all 30 runs): no extra novelty from switching (it lands between the two
+fixed regimes); the harder regime gives the most per creature (39.4 vs 27.3, p = 0.0002) with half the
+creatures. Written into FINDINGS.md and README. **4x world: invalid**: every 4x run hit the 20,000 population
+cap (my mistake: the cap was set for 1x worlds) and stopped by tick 11,700. **Queued:** the 4x world again with
+the cap at 80,000, 6 seeds per arm (needs `python fast/lab_queue.py` running).
+
 ## 2026-11-26 22:44 IST
 
 **Running:** switching world, 106 min in, 26 of 30 runs done (all alive). Provisional:

@@ -1362,3 +1362,28 @@ halves lasting novelty per creature and lowers diversity, although the shaken wo
 (food is easier to find when spread evenly). The same direction as Rainey & Travisano, in a world of evolving
 neural-network creatures: stable spatial structure is one of the ingredients that make the best world
 open-ended.
+
+## Switching worlds (after Kashtan & Alon 2005) (27 Nov 2026, 100k ticks, 10 seeds per world)
+
+Kashtan & Alon showed that goals switching between related variants speed up evolution and produce modular
+designs. Here, on the search's best world (regime A), a harder regime B (food clusters drift 3x faster, are 0.6x as
+rich, predators catch 2.5x as often), and a world switching A <-> B every 5,000 ticks (`asal_world._varying`).
+
+| | survived | MODES novelty | per 1000 creatures | diversity | creatures |
+|---|---|---|---|---|---|
+| switching every 5,000 ticks | 10/10 | 148.1 | 29.6 | 3.65 | 5,020 |
+| regime A fixed (best world) | 10/10 | **182.8** | 27.3 | **3.80** | 6,700 |
+| regime B fixed (harder) | 10/10 | 131.6 | **39.4** | 3.47 | 3,510 |
+
+Switching is not better than either fixed regime: it falls between them on every measure (vs A: total novelty
+p = 0.005, per creature p = 0.18; vs B: total p = 0.19, per creature p = 0.003), as a mixture of the two would.
+The Kashtan & Alon effect does not appear in this form. The harder regime B, as with the harsher digestion
+trade-off, gives the most lasting novelty per creature (39.4 vs 27.3, p = 0.0002) but supports half as many
+creatures, so the total is lower (p = 0.0005). A consistent pattern now: tougher conditions make each lineage
+more inventive; rich, structured worlds maximise the total.
+
+## 4x larger world: first attempt invalid (27 Nov 2026)
+
+All 10 runs of the 4x world stopped at 5,400-11,700 ticks: they reached the comparison tool's population cap
+(20,000), set for 1x worlds, while a 4x world naturally holds ~27,000 creatures. Not a result. Rerun queued with
+the cap at 80,000 (6 seeds per arm). Raw rows kept in `results/scale_capped/` for the record.
