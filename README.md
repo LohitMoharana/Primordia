@@ -63,6 +63,7 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 | ❌ | Shared food (needs two eaters) | Looks like teamwork, but it's crowding: hiding the food changes nothing. |
 | ❌ | Seasons | No smarter brains. An earlier "win" was a timing artefact. |
 | ✅ | **Worlds that keep evolution inventing** (ASAL's search, scored with the published MODES measure) | On 10 fresh seeds, the two worlds it found produce **1.75-2.8x as many lasting new strategies** as the plain world, more per creature (+35% and +54%), more diverse, all 10/10 surviving (p <= 0.0014). Common ingredients: a rich second food source, gentle predators, a few shelters. |
+| 🟡 | **Long run, 1M ticks, Bedau's test against a neutral shadow** | The best world produces **2.7x as many adaptive kinds** as the plain world over a million ticks (159 vs 58), but **both level off** (Bedau's class 2): invention is front-loaded and dries up after ~300-500k ticks. Structure multiplies novelty; it doesn't remove the limit. |
 | ✅ | **The result is robust to how it's measured** | The search's best world beats the plain world under every MODES setting tried (two other persistence windows, two other skeletons; p = 0.0001 throughout), and the gap grows with a stricter persistence filter (2.4x to 3.2x). |
 | ✅ | **Spatial structure drives lasting novelty** (after Rainey & Travisano 1998) | Shaking the best world (food reshuffled every tick) **nearly halves lasting novelty per creature** (15.3 vs 27.3, p = 0.0001) and lowers diversity, even though more creatures live there. |
 | 🟡 | **4x larger world** (after Bejjani et al. 2025) | 4x the creatures give 1.45x the lasting novelty and more diversity, but a third as much per creature: scale is a weak lever (and the strategy measure may saturate). |
@@ -95,7 +96,9 @@ Early on, single runs produced exciting "discoveries" that turned out to be luck
 - [x] 🧩 Evolvable actions: creatures evolve their own action chains: **no effect on lasting novelty**; first complexity above the ceiling, in 2/10 worlds
 - [x] 🔎 Search for the kind of world that keeps producing lasting novelty (ASAL's search, scored with MODES): **found and confirmed**
 - [x] 🌱 Remains: food made by other creatures' deaths (Soros & Stanley's condition 2): **no effect**; no scavengers evolved
-- [ ] 🏞️ Separate habitats, shaken, switching and 4x-larger worlds *(queued)*
+- [x] 🏞️ Separate habitats, shaken, switching and 4x-larger worlds
+- [x] 📏 Sensitivity check and the 1M-tick Bedau test
+- ⏸️ **Paused for exams (27 Nov 2026).** Next: break the complexity ceiling (creatures that can become more complex, not just different); a theory of why structure matters; write-up.
 - [ ] Large many-seed sweeps
 - [ ] 🌐 3D
 

@@ -3,6 +3,14 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 20:00 IST: last entry before the pause
+
+**Finished:** long Bedau run, all 8 runs (4 per world, 1M ticks). Best world: 159 adaptive components vs 58
+(p = 0.03, the smallest possible with 4 vs 4), lasting novelty 292 vs 140, per creature 45.5 vs 32.8, diversity
+4.01 vs 2.68. But both worlds are bounded (Bedau class 2): new adaptive components per 100k ticks 27.4 -> 4.5
+(best) and 9.4 -> 2.2 (plain); late phase not significantly different (p = 0.26). Shadow: 0 in every run.
+Written into FINDINGS.md and README. **The queue is empty; the project is paused for exams.**
+
 ## 2026-11-27 18:15 IST
 
 **Running:** long Bedau run, 7 h in. All 4 plain-world runs and 1 of 4 best-world runs are done.

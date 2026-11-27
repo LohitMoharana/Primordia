@@ -1,0 +1,9 @@
+world,seed,ticks,threshold,adaptive_components,shadow_passing,rate_first_half,rate_second_half,shadow_rate,diversity_first_half,diversity_second_half,mean_activity_end,mu_mean,unbounded_so_far
+best:fast/runs/modes_search,1001,1000000,910.0,121,0,23.61,0.6,0.0,78.61,27.37,409640.2,0.2075,False
+best:fast/runs/modes_search,1002,1000000,607.0,129,0,21.81,4.0,0.0,87.0,64.66,282939.0,0.1897,False
+best:fast/runs/modes_search,1003,1000000,403.0,219,0,37.42,6.4,0.0,117.87,107.07,141994.6,0.2256,False
+best:fast/runs/modes_search,1004,1000000,515.0,168,0,26.61,7.0,0.0,94.81,103.83,138333.5,0.205,False
+start,1001,1000000,1526.0,58,0,10.21,1.4,0.0,37.49,23.49,313342.9,0.1644,False
+start,1002,1000000,1422.0,63,0,8.4,4.2,0.0,32.91,31.37,202229.5,0.1383,False
+start,1003,1000000,1327.0,67,0,11.81,1.6,0.0,43.25,20.77,372417.8,0.1886,False
+start,1004,1000000,2585.0,45,0,7.2,1.8,0.0,38.03,21.2,380039.3,0.178,False

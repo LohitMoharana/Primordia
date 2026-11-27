@@ -1430,3 +1430,47 @@ exaggerates everything (it partly counts mutation noise, as expected from its lo
 Switching the best world between regimes A and B every 1,000 ticks instead of 5,000: lasting novelty 162.5 vs
 182.8 for A fixed (p = 0.05), per 1000 creatures 30.2 vs 27.3 (p = 0.08), diversity 3.80 vs 3.80 (p = 0.98). No
 benefit again. The Kashtan & Alon effect does not appear in Primordia at either switching speed.
+
+## Long run: 1,000,000 ticks, with Bedau's activity test against a neutral shadow (27 Nov 2026, 4 seeds per world)
+
+The search's best world and the plain world, 1M ticks each (`modes_compare.py --bedau`, `bedau_analyze.py`).
+Bedau's test (Bedau & Packard 1991; Bedau, Snyder & Packard 1998; the test Channon's Geb passed): components =
+behavioural strategies; each component's activity = its count summed over snapshots; a neutral shadow run is
+matched to the real one (same population at every snapshot, new components at the real rate, but every shadow
+creature inherits from a random one, so persistence is chance); a real component counts as adaptive once its
+activity exceeds the highest activity any shadow component (born after the start) ever reached.
+
+Lasting new strategies (MODES) per 100k ticks:
+
+| | 0-100k | 100-200k | 200-300k | 300-400k | 400-500k | 500k-1M (each 100k) |
+|---|---|---|---|---|---|---|
+| best world, seed 1001 | 203 | 39 | 9 | 6 | 0 | 0, 0, 1, 0, 1 |
+| best world, seed 1002 | 168 | 42 | 28 | 4 | 4 | 5, 8, 5, 0, 2 |
+| best world, seed 1003 | 159 | 72 | 42 | 34 | 20 | 6, 6, 6, 4, 6 |
+| best world, seed 1004 | 155 | 68 | 23 | 17 | 7 | 5, 7, 10, 4, 5 |
+| plain world, 4 seeds | 46-97 | 24-66 | 5-12 | 2-19 | 2-7 | 0-9 |
+
+| over 1M ticks | best world | plain world | p (4 vs 4; 0.03 is the smallest possible) |
+|---|---|---|---|
+| survived | 4/4 | 4/4 | |
+| adaptive components (Bedau) | **159** | 58 | 0.03 |
+| new adaptive components per 100k ticks, first half | **27.4** | 9.4 | 0.03 |
+| new adaptive components per 100k ticks, second half | 4.5 | 2.2 | 0.26 |
+| shadow components passing the threshold | 0 | 0 | |
+| components present, second half | 75.7 | 24.2 | 0.06 |
+| MODES lasting novelty (whole run) | **292** | 140 | 0.03 |
+| MODES novelty per 1000 creatures | **45.5** | 32.8 | 0.03 |
+| MODES diversity | **4.01** | 2.68 | 0.03 |
+
+**Both worlds are bounded** (Bedau's class 2): new adaptive activity falls about sixfold (best) and fourfold
+(plain) from the first half of the run to the second, and in the late phase the two worlds are no longer clearly
+different (p = 0.26). Over the whole million ticks the best world produces 2.7x as many adaptive components as the
+plain world, twice the lasting novelty, more per creature, and keeps about three times as many strategies alive;
+but its invention is front-loaded and dries up too. One run (seed 1001) went further: its population fell from
+~6,700 to 3,200 and its novelty stopped entirely after 400k ticks.
+
+Conclusion: the right kind of world multiplies how much evolution invents and how much variety it sustains, but
+does not remove the limit. Neither world shows unbounded evolutionary activity. Combined with the complexity
+ceiling (complexity 3 everywhere), the likely reason is that the space of strategies these creatures can express
+is fixed and gets explored: open-endedness here is limited by what the creatures can be, which the environment
+can only help them explore faster.
