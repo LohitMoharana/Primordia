@@ -1387,3 +1387,20 @@ more inventive; rich, structured worlds maximise the total.
 All 10 runs of the 4x world stopped at 5,400-11,700 ticks: they reached the comparison tool's population cap
 (20,000), set for 1x worlds, while a 4x world naturally holds ~27,000 creatures. Not a result. Rerun queued with
 the cap at 80,000 (6 seeds per arm). Raw rows kept in `results/scale_capped/` for the record.
+
+## 4x larger world (after Bejjani et al. 2025) (27 Nov 2026, 100k ticks, 6 seeds per arm)
+
+The search's best world on a map twice as wide (4x the area, 4x the food clusters, soil patches and predators, the
+same density), population cap 80,000 (the first attempt stopped at a 20,000 cap and was discarded).
+
+| | survived | MODES novelty | novelty per 1000 creatures | diversity | change | creatures |
+|---|---|---|---|---|---|---|
+| 4x world | 6/6 | **255.3** | 9.4 | **4.23** | **13.2** | 27,100 |
+| 1x world (best) | 6/6 | 175.7 | **26.3** | 3.73 | 8.0 | 6,680 |
+
+All differences p <= 0.005. Four times the creatures give more lasting novelty in total (1.45x) and more coexisting
+strategies (4.23 vs 3.73 bits), but far less per creature (about a third). Novelty grows much more slowly than
+population: scale alone is a weak lever here. One caution: the strategy skeleton has 512 possible kinds, and a
+world of 27,000 creatures may come close to using what is reachable, so part of the flattening could be the measure
+saturating rather than evolution. Bejjani et al. reported new *behaviours* with scale; our measure counts kinds of
+behaviour and cannot see more complex ones (the complexity ceiling again).

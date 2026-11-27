@@ -3,6 +3,12 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 10:37 IST
+
+**Finished:** 4x world (fixed cap): 6/6 survived with ~27,100 creatures; lasting novelty 255.3 vs 175.7 (1.45x),
+diversity 4.23 vs 3.73, but per 1000 creatures 9.4 vs 26.3 (all p <= 0.005). Written into FINDINGS.md.
+**Running:** sensitivity check + faster switching (started ~09:05; 30 runs). **Next:** long Bedau run (1M ticks).
+
 ## 2026-11-27 07:05 IST
 
 **Running:** 4x world rerun (cap 80,000), 82 min in. The 6 normal-size runs are done (151-201 lasting new
