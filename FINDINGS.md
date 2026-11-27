@@ -1404,3 +1404,29 @@ population: scale alone is a weak lever here. One caution: the strategy skeleton
 world of 27,000 creatures may come close to using what is reachable, so part of the flattening could be the measure
 saturating rather than evolution. Bejjani et al. reported new *behaviours* with scale; our measure counts kinds of
 behaviour and cannot see more complex ones (the complexity ceiling again).
+
+## ✅ Sensitivity check: the main result does not depend on how MODES is set up (27 Nov 2026)
+
+The same 10 runs per world (same seeds as the fresh-seed check, which reproduced exactly) measured five ways at
+once: the main setting (strategy skeleton, 5,000-tick persistence filter), shorter and longer filters (2,500 and
+10,000 ticks), and a coarser and a finer skeleton (`modes_compare.py --variants`).
+
+| measure | best world: lasting novelty | plain world | ratio | p | per 1000 creatures: best vs plain | p | diversity: best vs plain | p |
+|---|---|---|---|---|---|---|---|---|
+| main (strategy, 5,000 ticks) | 182.8 | 65.6 | 2.8x | 0.0001 | 27.3 vs 20.2 | 0.0016 | 3.80 vs 2.75 | 0.0001 |
+| filter 2,500 ticks | 212.5 | 86.8 | 2.4x | 0.0001 | 32.1 vs 27.0 | 0.010 | 3.97 vs 3.02 | 0.0001 |
+| filter 10,000 ticks | 150.7 | 47.0 | 3.2x | 0.0001 | 22.2 vs 14.2 | 0.0004 | 3.57 vs 2.29 | 0.0001 |
+| coarse skeleton (top-2 kinds, ~30 possible) | 31.9 | 16.1 | 2.0x | 0.0001 | 4.8 vs 5.0 | 0.63 | 2.70 vs 1.63 | 0.0001 |
+| fine skeleton (8 groups, ~45% heritable) | 10,918 | 1,269 | 8.6x | 0.0001 | 1,628 vs 390 | 0.0001 | 7.19 vs 4.36 | 0.0001 |
+
+The best world produces more lasting novelty and more diversity than the plain world under every setting
+(p = 0.0001 throughout), and the gap *widens* with a stricter persistence filter (2.4x -> 2.8x -> 3.2x): the
+extra novelty is the kind that lasts. The per-creature advantage holds under four of five settings; it vanishes
+only with the coarse skeleton, which has about 30 possible kinds and saturates in both worlds. The fine skeleton
+exaggerates everything (it partly counts mutation noise, as expected from its low heritability).
+
+## Faster switching (every 1,000 ticks) (27 Nov 2026, 10 seeds)
+
+Switching the best world between regimes A and B every 1,000 ticks instead of 5,000: lasting novelty 162.5 vs
+182.8 for A fixed (p = 0.05), per 1000 creatures 30.2 vs 27.3 (p = 0.08), diversity 3.80 vs 3.80 (p = 0.98). No
+benefit again. The Kashtan & Alon effect does not appear in Primordia at either switching speed.

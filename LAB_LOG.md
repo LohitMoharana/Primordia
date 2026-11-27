@@ -3,6 +3,13 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 11:52 IST
+
+**Finished:** sensitivity check: the best world beats the plain world under all five MODES settings (p = 0.0001),
+gap widening with a stricter filter (2.4x / 2.8x / 3.2x); per-creature advantage in 4 of 5 (not with the coarse
+skeleton, which saturates). Faster switching (1,000 ticks): no benefit (p = 0.05-0.98). Written into FINDINGS.md.
+**Running:** long Bedau run, 1,000,000 ticks, 4 seeds per world, started 11:14. Expected: tomorrow morning.
+
 ## 2026-11-27 10:37 IST
 
 **Finished:** 4x world (fixed cap): 6/6 survived with ~27,100 creatures; lasting novelty 255.3 vs 175.7 (1.45x),
