@@ -3,6 +3,15 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 15:28 IST
+
+**Running:** long Bedau run (started 11:14). First run finished: plain world, seed 1003, 1,000,000 ticks, 4.2 h.
+Its lasting novelty per 100k ticks: 97, 24, 5, 14, 5, 1, 0, 2, 5, 0: it dries up after the first 100-200k ticks.
+Bedau (threshold = highest activity any shadow component reached, 1,327): 67 adaptive components, appearing at 11.8
+per 100k ticks in the first half and 1.6 in the second; the shadow 0; diversity falls from 43 to 21 components.
+So the plain world is bounded: Bedau's class 2 (new activity dying out). The best world's runs (more creatures,
+slower) are still going; expected ~18:00-20:00. That comparison is the result.
+
 ## 2026-11-27 11:52 IST
 
 **Finished:** sensitivity check: the best world beats the plain world under all five MODES settings (p = 0.0001),
