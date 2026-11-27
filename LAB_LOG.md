@@ -3,6 +3,16 @@
 Running notes from the automatic lab (`fast/lab_queue.py` on the laptop). Newest first. Small result
 files are copied into `results/` at each update; full runs stay on the laptop.
 
+## 2026-11-27 18:15 IST
+
+**Running:** long Bedau run, 7 h in. All 4 plain-world runs and 1 of 4 best-world runs are done.
+Lasting new strategies per 100k ticks:
+- best world, seed 1001: 203, 39, 9, 6, 0, 0, 0, 1, 0, 1 (257 total; population fell from ~6,700 to 3,200)
+- plain world, 4 seeds: 46-97, 24-66, 5-12, 2-19, then 0-9 per 100k
+Bedau (so far): best world 121 adaptive components (23.6 per 100k ticks in the first half, 0.6 in the second);
+plain world 58 (9.4, then 2.2); shadow 0 in every run. Provisional: both kinds of world are bounded (class 2).
+The best world invents far more early but dries up just as completely. Waiting for 3 more best-world runs.
+
 ## 2026-11-27 15:28 IST
 
 **Running:** long Bedau run (started 11:14). First run finished: plain world, seed 1003, 1,000,000 ticks, 4.2 h.
